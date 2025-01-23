@@ -1,0 +1,7 @@
+kivymd==1.1.1
+kivy
+gspread
+bokeh
+pandas
+selenium
+olefile

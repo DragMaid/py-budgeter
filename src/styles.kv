@@ -1,0 +1,169 @@
+#:import hex kivy.utils.get_color_from_hex
+<FreeCreateButton>
+    anchor_x: "right"
+    anchor_y: "bottom"
+    padding: [0, 0, 10, 10]
+
+    MDIconButton:
+        icon: "plus"
+        md_bg_color: app.theme_cls.primary_color
+        icon_size: "40sp"
+        on_release: root.create_button_callback()
+
+<CardLabel>
+    color: "black"
+    halign: "left"
+    valugn: "middle"
+
+<CardTextArea>
+    orientation: "vertical"
+    padding: 10, 10
+
+<CardLeftWidget>
+    size_hint_x: .3
+    orientation: "vertical"
+    MDBoxLayout:
+        padding: 8
+        MDAnchorLayout:
+            id: primary_container
+            anchor_x: "center"
+            anchor_y: "center"
+            radius: 20
+
+    MDAnchorLayout:
+        id: secondary_container
+        size_hint_y: .3
+        anchor_x: "center"
+        anchor_y: "center"
+
+<SheetCard>
+    orientation: "horizontal"
+    height: 100
+    size_hint_y: None
+    padding: 5
+    radius: 20
+    md_bg_color: get_color_from_hex("#EDF1FC")
+
+    canvas.before:
+        Color:
+            rgba: .5, .5, .5, 1
+        Line:
+            width: 2
+            rounded_rectangle: self.x, self.y, self.width, self.height, 20
+
+<LoadingOverlay>
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 0.5
+        Rectangle:
+            pos:self.pos 
+            size:self.size
+
+    MDRectangleFlatButton:
+        size_hint: [1, 1]
+        opacity: 0
+
+    Image:
+        source: "../assets/loading.gif"
+        anim_delay: 0.05
+
+<TemplateTopBar>
+    elevation: 4
+
+<IconListItem>
+    IconLeftWidget:
+        icon: root.icon
+    
+<SettingsScreen>
+    MDGridLayout:
+        cols: 1
+        padding: [20, 10]
+        spacing: [0, 20]
+        MDTextField:
+            id: credential
+            text: root.credential
+            mode: "rectangle"
+            hint_text: "CREDENTIAL"
+            required: True
+        MDTextField:
+            id: sheet_id
+            text: root.sheet_id
+            mode: "rectangle"
+            hint_text: "SHEET ID"
+            required: True
+        MDGridLayout:
+            cols: 2
+            adaptive_height: True
+            MDTextField:
+                id: user_1
+                text: root.user_1
+                mode: "rectangle"
+                hint_text: "USER 1"
+                required: True
+            MDTextField:
+                id: user_2
+                text: root.user_2
+                mode: "rectangle"
+                hint_text: "USER 2"
+                required: True
+        MDFloatLayout:
+            size_hint: [1, None]
+            MDRaisedButton:
+                pos_hint: {"center_x": .5, "center_y": .5}
+                text: "OK"
+                on_release: root.edit_config()
+
+            
+    
+
+<TemplateNavigationBar>
+    panel_color: "#eeeaea"
+    selected_color_background: "orange"
+    transition_duration: 0.1
+    MDBottomNavigationItem:
+        name: 'screen 1'
+        text: 'sheets'
+        icon: 'google-spreadsheet'
+        MDScreenManager:
+            id: scr_mgr
+            SheetsScreen:
+                name: "sheets screen"
+
+            CardViewScreen:
+                name: "cardview screen"
+
+    MDBottomNavigationItem:
+        name: 'screen 2'
+        text: 'statistics'
+        icon: 'chart-arc'
+        StatisticsScreen:
+            id: stat_scr
+            name: "statistics screen"
+
+    MDBottomNavigationItem:
+        name: 'screen 3'
+        text: 'settings'
+        icon: 'cog'
+        SettingsScreen:
+            name: "settings screen"
+
+<LeftNavDrawer@MDNavigationDrawer>
+    MDNavigationDrawerMenu:
+        MDNavigationDrawerHeader:
+            title: "Worksheets"
+        MDNavigationDrawerDivider:
+
+
+MDFloatLayout:
+    MDBoxLayout:
+        orientation: "vertical"
+        TemplateTopBar:
+            id: top_nav
+            title: ""
+            anchor_title: "left"
+            left_action_items: [["menu", lambda x: root.ids.navigation_drawer.set_state("open")]]
+        TemplateNavigationBar:
+            id: bottom_nav
+
+    LeftNavDrawer:
+        id: navigation_drawer 
