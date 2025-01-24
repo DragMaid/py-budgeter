@@ -1,4 +1,5 @@
-kivymd==1.1.1
+#kivymd==1.1.1
+kivymd
 kivy
 gspread
 bokeh

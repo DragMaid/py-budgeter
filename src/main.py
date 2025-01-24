@@ -184,14 +184,15 @@ class StatisticsScreen(MDScreen):
         self.bar_img.reload()
 
 
+class OutlineGrid(MDGridLayout):
+    pass
+
 class SettingsScreen(MDScreen):
     sheet_id = StringProperty()
     credential = StringProperty()
+
     user_1 = StringProperty()
     user_2 = StringProperty()
-    spending_1 = StringProperty()
-    spending_2 = StringProperty()
-    spending_diff = StringProperty()
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -199,10 +200,42 @@ class SettingsScreen(MDScreen):
         self.credential = MDApp.get_running_app().CREDENTIAL
         self.user_1 = MDApp.get_running_app().USERS[0]
         self.user_2 = MDApp.get_running_app().USERS[1]
+        
+        self.credential_field = MDTextField(text=self.credential, hint_text="Credential", mode="rectangle", required=True)
+        self.sheet_id_field = MDTextField(text=self.sheet_id, hint_text="Sheet ID", mode="rectangle", required=True)
+        self.children[0].add_widget(self.credential_field)
+        self.children[0].add_widget(self.sheet_id_field)
+
+        self.users_container = MDGridLayout(cols=2, adaptive_height=True, spacing=[10, 0])
+        self.user1_field = MDTextField(text=self.user_1, hint_text="User 1", mode="rectangle", required=True)
+        self.user2_field = MDTextField(text=self.user_2, hint_text="User 2", mode="rectangle", required=True)
+        self.children[0].add_widget(self.users_container)
+        self.users_container.add_widget(self.user1_field)
+        self.users_container.add_widget(self.user2_field)
+
+        self.split_table = OutlineGrid(rows=2, size_hint=[1, None], height=dp(200))
+        self.user_split = OutlineGrid(cols=2)
+        self.children[0].add_widget(self.split_table)
+        self.split_table.add_widget(self.user_split)
+
+        self.user1_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
+        self.user2_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
+        self.user_split.add_widget(self.user1_label)
+        self.user_split.add_widget(self.user2_label)
+
+        self.diff_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
+        self.split_table.add_widget(self.diff_label)
+
+        self.control_container = MDFloatLayout(size_hint=[1, None])
+        self.children[0].add_widget(self.control_container)
+        
+        self.save_button = MDRaisedButton(text="Save & Reset", font_style="Subtitle1", pos_hint={"center_x": .5, "center_y": .5})
+        self.save_button.bind(on_release=self.edit_config)
+        self.control_container.add_widget(self.save_button)
 
     def edit_config(self, *args):
         configs = []
-        for field in [self.ids.credential, self.ids.sheet_id, self.ids.user_1, self.ids.user_2]:
+        for field in [self.credential_field, self.sheet_id_field, self.user1_field, self.user2_field]:
             data = field.text.strip()
             if data == "":
                 return
@@ -213,9 +246,9 @@ class SettingsScreen(MDScreen):
 
     def update_budget_split(self, data: list):
         diff = data[0][1] - data[1][1]
-        self.spending_1 = f"{data[0][0]}: ${data[0][1]}"
-        self.spending_2 = f"{data[1][0]}: ${data[1][1]}"
-        self.spending_diff = f"Difference: ${diff:.2f}"
+        self.user1_label.text = f"{data[0][0]}: ${data[0][1]}"
+        self.user2_label.text = f"{data[1][0]}: ${data[1][1]}"
+        self.diff_label.text  = f"Difference: ${diff:.2f}"
 
 
 class FreeCreateButton(AnchorLayout):
@@ -259,7 +292,6 @@ class DropDownBase:
         self.menu.bind()
 
     def open(self):
-        self.menu.check_position_caller(None, None, None)  # type: ignore
         self.menu.open()
 
     def dropdown_callback(self, text: str):
