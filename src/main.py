@@ -246,12 +246,13 @@ class DropDownBase:
         self.items = items
         self.position = position
         self.width_mult = width_mult
-        self.create_dropdown_menu(self.items)
+        self.create_dropdown_menu()
 
-    def create_dropdown_menu(self, items):
+    @mainthread
+    def create_dropdown_menu(self):
         self.menu = MDDropdownMenu(
             caller=self.caller,
-            items=items,
+            items=self.items,
             position=self.position,
             width_mult=self.width_mult
         )
@@ -353,17 +354,20 @@ class CategoryDropdown(DropDownBase):
 
 class PaidDropdown(DropDownBase):
     def __init__(self, caller, paid_for=False):
-        self.names = MDApp.get_running_app().USERS
-        if paid_for:
-            self.names = MDApp.get_running_app().PAID_FOR_OPTIONS
+        self.paid_for = paid_for
+        self.create_items()
+        super().__init__(caller, items=self.items)
+
+    def create_items(self):
+        names = MDApp.get_running_app().USERS
+        if self.paid_for:
+            names = MDApp.get_running_app().PAID_FOR_OPTIONS
         self.items = [{
             "viewclass": "IconListItem",
             "icon": "account",
             "text": name,
             "height": dp(56),
-            "on_release": lambda account_name=name: self.dropdown_callback(account_name), } for name in self.names]
-        super().__init__(caller, items=self.items)
-
+            "on_release": lambda account_name=name: self.dropdown_callback(account_name), } for name in names]
 
 class FormDatePicker:
     def __init__(self, caller):
@@ -455,6 +459,12 @@ class CardViewScreen(MDScreen):
 
         for key, field in self.fields.items():
             self.form_container.add_widget(field)
+
+    def update_users(self):
+        self.paid_by_dropdown.create_items()
+        self.paid_by_dropdown.create_dropdown_menu()
+        self.paid_for_dropdown.create_items()
+        self.paid_for_dropdown.create_dropdown_menu()
 
     def disable_delete_button(self, state):
         self.delete_button.disabled = state
@@ -683,6 +693,7 @@ class App(MDApp):
         self.root.ids.top_nav.title = MDApp.get_running_app().sheet_manager.get_active_worksheet().title  # type: ignore
         self.root.ids.bottom_nav.ids.set_scr.update_budget_split(
             MDApp.get_running_app().sheet_manager.split_budget())  # type: ignore
+        self.root.ids.bottom_nav.ids.scr_mgr.get_screen("cardview screen").update_users()  # type: ignore
         self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").sheet_refresh()  # type: ignore
         self.root.ids.bottom_nav.ids.stat_scr.statistics_refresh(start_index=start_index)  # type: ignore
         self.update_nav_worksheets()
@@ -723,8 +734,7 @@ class App(MDApp):
             if self.is_new_month():
                 MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
             self.screen_update(0)
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(
-                False)  # type: ignore
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
         except:
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
             self.open_error_dialog()
