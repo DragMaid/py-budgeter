@@ -8,4 +8,8 @@ run:
 	python ./src/main.py
 dev:
 	./scripts/run.sh
-.PHONY: install run
+reset:
+	./scripts/reset.sh
+test:
+	./scripts/test.sh
+.PHONY: reset install run

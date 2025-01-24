@@ -74,6 +74,21 @@
     IconLeftWidget:
         icon: root.icon
     
+<SpendingText@MDLabel>
+    velign: "center"
+    halign: "center"
+    theme_text_color: "Custom"
+    text_color: 0, 0, 1, 1
+    
+<OutlineGrid@MDGridLayout>
+    adaptive_height: True
+    canvas.before:
+        Color:
+            rgba: 0, 0, 1, 1
+        Line:
+            width: 1
+            rectangle: self.x, self.y, self.width, self.height
+
 <SettingsScreen>
     MDGridLayout:
         cols: 1
@@ -106,15 +121,29 @@
                 mode: "rectangle"
                 hint_text: "USER 2"
                 required: True
+
+        OutlineGrid:
+            rows: 2
+            OutlineGrid:
+                cols: 2
+                SpendingText:
+                    text: root.spending_1 
+                SpendingText:
+                    text: root.spending_2
+            OutlineGrid:
+                cols: 1
+                SpendingText:
+                    text: root.spending_diff
+
         MDFloatLayout:
             size_hint: [1, None]
             MDRaisedButton:
                 pos_hint: {"center_x": .5, "center_y": .5}
-                text: "OK"
+                text: "Save & Reset"
+                font_style: "Subtitle1"
                 on_release: root.edit_config()
 
-            
-    
+
 
 <TemplateNavigationBar>
     panel_color: "#eeeaea"
@@ -145,6 +174,7 @@
         text: 'settings'
         icon: 'cog'
         SettingsScreen:
+            id: set_scr
             name: "settings screen"
 
 <LeftNavDrawer@MDNavigationDrawer>

@@ -3,6 +3,7 @@ import json
 import os
 
 from kivy.clock                  import mainthread
+from kivy.config                 import Config
 from kivy.lang                   import Builder
 from kivy.uix.anchorlayout       import AnchorLayout
 from kivy.metrics                import dp
@@ -36,14 +37,18 @@ from bokeh.palettes  import HighContrast3, Category20c
 from bokeh.plotting  import figure
 from bokeh.transform import cumsum
 
-SRC_DIR = os.path.dirname(os.path.realpath(__file__))
-INFO_DIR = os.path.join(SRC_DIR, "../info")
-ASSETS_DIR = os.path.join(SRC_DIR, "../assets")
+SRC_DIR          = os.path.dirname(os.path.realpath(__file__))
+INFO_DIR         = os.path.join(SRC_DIR, "../info")
+ASSETS_DIR       = os.path.join(SRC_DIR, "../assets")
 CREADENTIAL_PATH = os.path.join(INFO_DIR, "credential.json")
-CONFIG_PATH = os.path.join(INFO_DIR, "config.json")
-PIE_CHART_PATH = os.path.join(ASSETS_DIR, "pie.png")
-BAR_CHART_PATH = os.path.join(ASSETS_DIR, "bar.png")
+AUTHORIZED_PATH  = os.path.join(INFO_DIR, "authorized_user.json")
+CONFIG_PATH      = os.path.join(INFO_DIR, "config.json")
+PIE_CHART_PATH   = os.path.join(ASSETS_DIR, "pie.png")
+BAR_CHART_PATH   = os.path.join(ASSETS_DIR, "bar.png")
 
+Config.set('graphics', 'resizable', False)
+Config.set('input', 'mouse', 'mouse,disable_multitouch')
+Config.set('kivy', 'window_icon','your_app_icon_64x64.png' )
 
 
 class TemplateNavigationBar(MDBottomNavigation):
@@ -175,6 +180,10 @@ class SettingsScreen(MDScreen):
     credential = StringProperty()
     user_1 = StringProperty()
     user_2 = StringProperty()
+    spending_1 = StringProperty()
+    spending_2 = StringProperty()
+    spending_diff = StringProperty()
+
     def __init__(self, **kwargs):
         super().__init__()
         self.sheet_id = MDApp.get_running_app().SHEET_ID
@@ -192,6 +201,12 @@ class SettingsScreen(MDScreen):
         MDApp.get_running_app().write_config(configs[0], configs[1], [configs[2], configs[3]])
         MDApp.get_running_app().retrieve_saved_config()
         MDApp.get_running_app().on_start()
+
+    def update_budget_split(self, data : list):
+        diff = data[0][1] - data[1][1]
+        self.spending_1  = f"{data[0][0]}: ${data[0][1]}"
+        self.spending_2 = f"{data[1][0]}: ${data[1][1]}"
+        self.spending_diff = f"Difference: ${diff:.2f}"
 
 class FreeCreateButton(AnchorLayout):
     def create_button_callback(self):
@@ -597,6 +612,10 @@ class App(MDApp):
         self.worksheet_items = []
 
     @mainthread
+    def clear_nav_main(self):
+        self.clear_nav_worksheets()
+
+    @mainthread
     def update_nav_worksheets(self):
         self.clear_nav_worksheets()
         worksheets = MDApp.get_running_app().sheet_manager.get_all_worksheets()
@@ -617,8 +636,9 @@ class App(MDApp):
     def screen_update(self, start_index):
         MDApp.get_running_app().sheet_manager.update_all_worksheets()
         self.root.ids.top_nav.title = MDApp.get_running_app().sheet_manager.get_active_worksheet().title #type: ignore
-        self.root.ids.bottom_nav.ids.stat_scr.statistics_refresh(start_index=start_index) #type: ignore
+        self.root.ids.bottom_nav.ids.set_scr.update_budget_split(MDApp.get_running_app().sheet_manager.split_budget()) #type: ignore
         self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").sheet_refresh() #type: ignore
+        self.root.ids.bottom_nav.ids.stat_scr.statistics_refresh(start_index=start_index) #type: ignore
         self.update_nav_worksheets()
         self.close_loading_screen()
         self.thread = None
@@ -646,8 +666,10 @@ class App(MDApp):
     def startup_process(self):
         try:
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").clear_cards() #type: ignore
+            self.clear_nav_main()
             MDApp.get_running_app().sheet_manager = SheetManager(
                     credential_path = CREADENTIAL_PATH, 
+                    authorized_path = AUTHORIZED_PATH,
                     sheet_id = MDApp.get_running_app().SHEET_ID,
                     users = MDApp.get_running_app().USERS)
             MDApp.get_running_app().sheet_manager.update_all_worksheets()

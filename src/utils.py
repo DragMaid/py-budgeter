@@ -1,5 +1,6 @@
 import datetime
 import gspread 
+import os
 
 # | date | product | category | cost | status | paid_for | paid_by
 STRUCTURE_DICT = {"date": 0, "product": 1, "category": 2,  "cost": 3, "status": 4, "paid for": 5, "paid by": 6}
@@ -7,11 +8,11 @@ CATEGORIES = ["Food", "Transportation", "Essentials", "Entertainment"]
 STATUSES = ["Paid", "Pending"]
 
 class SheetManager:
-    def __init__(self, credential_path="", sheet_id="", users=[]):
+    def __init__(self, credential_path="", authorized_path="", sheet_id="", users=[]):
         self.active_worksheet = None
         self.worksheet_data = None
-        self.worksheets = None
         self.active_index = None
+        self.worksheets = []
 
         if (len(users) != 2): raise Exception("[ERROR]: Invalid number of users")
         self.USERS = users
@@ -19,14 +20,31 @@ class SheetManager:
 
         self.SHEET_ID = sheet_id
         self.CREDENTIAL_PATH = credential_path
+        self.AUTHORIZED_PATH = authorized_path
 
-        self.GOOGLE_ACCOUNT = gspread.oauth(credentials_filename = self.CREDENTIAL_PATH) #type: ignore
+        try:
+            self.init_gspread()
+        except Exception as e:
+            if type(e).__name__ == "RefreshError":
+                os.remove(self.AUTHORIZED_PATH)
+                self.init_gspread()
+
+    def init_gspread(self):
+        self.GOOGLE_ACCOUNT = gspread.oauth(
+                credentials_filename = self.CREDENTIAL_PATH,
+                authorized_user_filename = self.AUTHORIZED_PATH) #type: ignore
         self.GOOGLE_SHEET   = self.GOOGLE_ACCOUNT.open_by_key(self.SHEET_ID)
 
     def update_all_worksheets(self):
         self.worksheets = self.GOOGLE_SHEET.worksheets()
         if self.active_worksheet == None:
             self.set_active_worksheet(0)
+
+    def update_first_worksheet(self):
+        first_worksheet = self.GOOGLE_SHEET.get_worksheet(0)
+        if len(self.worksheets) > 0: self.worksheets[0] = first_worksheet
+        else: self.worksheets.append(first_worksheet)
+        self.set_active_worksheet(0)
 
     def get_active_index(self):
         return self.active_index
@@ -119,9 +137,9 @@ class SheetManager:
     def split_budget(self):
         # split money among the 2 registered users
         self.last_index = self.get_active_index()
-        spending = {self.USERS[0]: float(0), self.USERS[1]: float(0)}
-        spending[self.USERS[0]] += self.calculate_sum_filter(filters=[["paid for", "Both"], ["paid by", self.USERS[0]]]) / 2
-        spending[self.USERS[0]] += self.calculate_sum_filter(filters=[["paid for", self.USERS[1]], ["paid by", self.USERS[0]]])
-        spending[self.USERS[1]] += self.calculate_sum_filter(filters=[["paid for", "Both"], ["paid by", self.USERS[1]]]) / 2
-        spending[self.USERS[1]] += self.calculate_sum_filter(filters=[["paid for", self.USERS[0]], ["paid by", self.USERS[1]]])
+        spending = [[self.USERS[0], 0], [self.USERS[1], 0]]
+        spending[0][1] += self.calculate_sum_filter(filters=[["paid for", "Both"], ["paid by", self.USERS[0]]]) / 2
+        spending[0][1] += self.calculate_sum_filter(filters=[["paid for", self.USERS[1]], ["paid by", self.USERS[0]]])
+        spending[1][1] += self.calculate_sum_filter(filters=[["paid for", "Both"], ["paid by", self.USERS[1]]]) / 2
+        spending[1][1] += self.calculate_sum_filter(filters=[["paid for", self.USERS[0]], ["paid by", self.USERS[1]]])
         return spending
