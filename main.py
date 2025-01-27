@@ -4,13 +4,14 @@ import json
 import os
 
 SRC_DIR = os.path.dirname(os.path.realpath(__file__))
-INFO_DIR = os.path.join(SRC_DIR, "../info")
-ASSETS_DIR = os.path.join(SRC_DIR, "../assets")
+INFO_DIR = os.path.join(SRC_DIR, "info")
+ASSETS_DIR = os.path.join(SRC_DIR, "assets")
 CREDENTIAL_PATH = os.path.join(INFO_DIR, "credential.json")
 AUTHORIZED_PATH = os.path.join(INFO_DIR, "authorized_user.json")
 CONFIG_PATH = os.path.join(INFO_DIR, "config.json")
 PIE_CHART_PATH = os.path.join(ASSETS_DIR, "pie.png")
 BAR_CHART_PATH = os.path.join(ASSETS_DIR, "bar.png")
+LOADING_GIF_PATH = os.path.join(ASSETS_DIR, "loading.gif")
 
 from kivy.config import Config
 
@@ -41,7 +42,7 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.menu.menu import MDDropdownMenu
 from kivymd.uix.list import OneLineIconListItem
 from kivymd.uix.pickers import MDDatePicker
-from utils import SheetManager
+from modules.utils import SheetManager
 from threading import Thread
 
 # For graphing features
@@ -53,6 +54,8 @@ from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
 
+print(os.path.join(MDApp().user_data_dir, "assets"))
+
 class TemplateNavigationBar(MDBottomNavigation):
     pass
 
@@ -62,7 +65,7 @@ class TemplateTopBar(MDTopAppBar):
 
 
 class LoadingOverlay(MDFloatLayout):
-    pass
+    loading_path = StringProperty(LOADING_GIF_PATH)
 
 
 class SheetsScreen(MDScreen):
@@ -796,7 +799,7 @@ class App(MDApp):
         self.theme_cls.material_style = "M3"
         self.theme_cls.primary_palette = "Teal"
         self.theme_cls.accent_palette = "Red"
-        return Builder.load_file("./styles.kv")
+        return Builder.load_file("./modules/styles.kv")
 
 
 if __name__ == "__main__":
