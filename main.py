@@ -46,12 +46,7 @@ from modules.utils import SheetManager
 from threading import Thread
 
 # For graphing features
-from math import pi
-from pandas import Series
-from bokeh.io import export_png
-from bokeh.palettes import HighContrast3, Category20c
-from bokeh.plotting import figure
-from bokeh.transform import cumsum
+import pygal
 
 
 print(os.path.join(MDApp().user_data_dir, "assets"))
@@ -141,17 +136,11 @@ class StatisticsScreen(MDScreen):
             values[category] = MDApp.get_running_app().sheet_manager.calculate_sum_filter(
                 filters=[["category", category]])
 
-        data = Series(values).reset_index(name='value').rename(columns={'index': 'category'})
-        data['angle'] = data['value'] / data['value'].sum() * 2 * pi
-        data['color'] = Category20c[len(values)]
-
-        p = figure(height=400, title=f"Pie Chart for {target_worksheet.title}", toolbar_location=None,
-                   x_range=(-0.5, 1.0))
-
-        p.wedge(x=0, y=1, radius=0.4,
-                start_angle=cumsum('angle', include_zero=True), end_angle=cumsum('angle'),
-                line_color="white", fill_color='color', legend_field='category', source=data)
-        export_png(p, filename=PIE_CHART_PATH)
+        pie_chart = pygal.Pie()
+        pie_chart.title = f'Proportional usage of budget in {target_worksheet.title} (in %)'
+        for key, value in values.items():
+            pie_chart.add(key, value)
+        pie_chart.render_to_png(PIE_CHART_PATH)
 
     def update_bar_chart(self, start_index):
         last_worksheet_index = MDApp.get_running_app().sheet_manager.get_active_index()
@@ -169,12 +158,15 @@ class StatisticsScreen(MDScreen):
                 option_data[option].append(data)  # type: ignore
 
         MDApp.get_running_app().sheet_manager.set_active_worksheet(last_worksheet_index)
+        print(option_data)
 
-        p = figure(x_range=time_stamps, height=400, title="Bar chart for total budget usage", toolbar_location=None)
-
-        p.vbar_stack(MDApp.get_running_app().PAID_FOR_OPTIONS, x='time', width=0.4, color=HighContrast3,
-                     source=option_data, legend_label=MDApp.get_running_app().PAID_FOR_OPTIONS)
-        export_png(p, filename=BAR_CHART_PATH)
+        bar_chart = pygal.StackedBar()
+        bar_chart.title = 'Total budget usage in last 5 months (in SGD)'
+        bar_chart.x_labels = option_data["time"]
+        for key, value in option_data.items():
+            if key != "time":
+                bar_chart.add(key, value)
+        bar_chart.render_to_png(BAR_CHART_PATH)
 
     def statistics_refresh(self, start_index):
         self.update_pie_chart()
@@ -757,22 +749,22 @@ class App(MDApp):
         error_dialog.show()
 
     def startup_process(self):
-        try:
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").clear_cards()  # type: ignore
-            self.clear_nav_main()
-            MDApp.get_running_app().sheet_manager = SheetManager(
-                credential_path=CREDENTIAL_PATH,
-                authorized_path=AUTHORIZED_PATH,
-                sheet_id=MDApp.get_running_app().SHEET_ID,
-                users=MDApp.get_running_app().USERS)
-            MDApp.get_running_app().sheet_manager.update_all_worksheets()
-            if self.is_new_month():
-                MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
-            self.screen_update(0)
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
-        except:
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
-            self.open_error_dialog()
+        # try:
+        self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").clear_cards()  # type: ignore
+        self.clear_nav_main()
+        MDApp.get_running_app().sheet_manager = SheetManager(
+            credential_path=CREDENTIAL_PATH,
+            authorized_path=AUTHORIZED_PATH,
+            sheet_id=MDApp.get_running_app().SHEET_ID,
+            users=MDApp.get_running_app().USERS)
+        MDApp.get_running_app().sheet_manager.update_all_worksheets()
+        if self.is_new_month():
+            MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
+        self.screen_update(0)
+        self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
+        # except:
+            # self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
+            # self.open_error_dialog()
 
         self.close_loading_screen()
         self.thread = None
