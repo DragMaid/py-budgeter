@@ -160,13 +160,18 @@ class StatisticsScreen(MDScreen):
         MDApp.get_running_app().sheet_manager.set_active_worksheet(last_worksheet_index)
         print(option_data)
 
-        bar_chart = pygal.StackedBar()
-        bar_chart.title = 'Total budget usage in last 5 months (in SGD)'
-        bar_chart.x_labels = option_data["time"]
-        for key, value in option_data.items():
-            if key != "time":
-                bar_chart.add(key, value)
-        bar_chart.render_to_png(BAR_CHART_PATH)
+        # SAMPLE DATA 1: option_data = {"time": ["Jan", "Feb"]}
+        # SAMPLE DATA 2: options_data = {..., "Binh": [1, 1, 1], "Hoang": [1, 2, 0]}
+
+        # StackedBarGraph(data, colors, **kwargs)
+
+        # bar_chart = pygal.StackedBar()
+        # bar_chart.title = 'Total budget usage in last 5 months (in SGD)'
+        # bar_chart.x_labels = option_data["time"]
+        # for key, value in option_data.items():
+            # if key != "time":
+                # bar_chart.add(key, value)
+        # bar_chart.render_to_png(BAR_CHART_PATH)
 
     def statistics_refresh(self, start_index):
         self.update_pie_chart()
