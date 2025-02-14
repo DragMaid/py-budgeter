@@ -11,25 +11,20 @@ from random import random
 from math import atan2, sqrt, pow, degrees, sin, cos, radians
 
 
-
-class PieChart(GridLayout):
+class PieGraph(FloatLayout):
     def __init__(self, data, position, size, legend_enable=True, **kwargs):
-        super(PieChart, self).__init__(**kwargs)
+        super(PieGraph, self).__init__(**kwargs)
 
         # main layout parameters
         self.position = position
         self.size_mine = size
-        self.col_default_width = 100
         self.data = {}
-        self.cols = 2
-        self.rows = 1
-        self.col_force_default = True
-        self.col_default_width = 300
-        self.row_force_default = True
-        self.row_default_height = 250
-        self.size_hint_y = None
-        self.size = (600, 450)
         self.temp = []
+
+        # with self.canvas:
+            # Color(1, 1, 0, 1)
+            # self.rect = Rectangle(pos=self.pos, size=self.size)
+            # self.bind(size=self._update_rect, pos=self._update_rect)
 
         for key, value in data.items():
             if type(value) is int:
@@ -48,53 +43,62 @@ class PieChart(GridLayout):
         self.pie = Pie(self.data, self.position, self.size_mine)
         self.add_widget(self.pie)
 
+
         if legend_enable:
             self.legend = LegendTree(self.data, self.position, self.size_mine)
             self.add_widget(self.legend)
+            self.bind(size=self._update_legend, pos=self._update_legend)
 
         self.bind(size=self._update_pie, pos=self._update_pie)
 
-        # yellow background to check widgets size and position
-        # with self.canvas:
-        #    Rectangle(pos=self.pos, size=self.size, color=Color(1, 1, 0, 0.5))
+    # def _update_rect(self, instance, value):
+        # self.rect.pos = instance.pos
+        # self.rect.size = instance.size
 
     def _update_pie(self, instance, value):
-        self.legend.pos = (instance.parent.pos[0], instance.parent.pos[1])
-        self.pie.pos = (instance.pos[0], instance.pos[1])
+        self.pie.pos = instance.pos
+        self.pie.size = (min(instance.size) for i in range(2))
+
+    def _update_legend(self, instance, value):
+        self.legend.pos = (instance.pos[0] + min(instance.size), instance.pos[1])
+        self.legend.size = (instance.size[0] - min(instance.size), instance.size[1])
 
 
 class LegendTree(GridLayout):
     def __init__(self, data, position, size, **kwargs):
         super(LegendTree, self).__init__(**kwargs)
-
-        # Legend layout parameters.
-        # Initial rows is 1, then for each next data entry new one is added.
         self.cols = 1
         self.rows = 1
         self.position = position
         self.size = size
-        self.row_default_height = 50
+        self.padding = [20, 0, 0, 0]
         self.spacing = 5
+        self.legends = []
 
         count = 0
         for key, value in data.items():
             percentage = value[1]
             color = value[2]
             # add legend (rectangle and text)
-            self.legend = Legend(pos=(self.position[0], self.position[1] - count * self.size[1] * 0.15),
+            self.legends.append(Legend(pos=(self.position[0], self.position[1] - count * self.size[1] * 0.15),
                                  size=self.size,
                                  color=color,
                                  name=key,
-                                 value=percentage)
-            self.add_widget(self.legend)
+                                 value=percentage))
+            self.add_widget(self.legends[count])
             self.rows += 1
             count += 1
 
-        self.bind(size=self._update_rect, pos=self._update_rect)
+        # with self.canvas.before:
+            # Color(1, 0, 0, 1)
+            # self.rect = Rectangle(pos=self.pos, size=self.size)
+            # self.bind(size=self._update_rect, pos=self._update_rect)
 
-    def _update_rect(self, instance, value):
-        self.legend.pos = (instance.parent.pos[0], instance.parent.pos[1])
-        self.pos = (instance.parent.pos[0] + 260, instance.parent.pos[1])
+    # def _update_rect(self, instance, value):
+        # self.rect.pos = instance.pos
+        # self.rect.size = instance.size
+
+
 
 
 # Class for creating Legend
@@ -103,8 +107,7 @@ class Legend(FloatLayout):
         super(Legend, self).__init__(**kwargs)
         self.cols = 2
         self.rows = 1
-        self.size_hint_x = 200
-        self.size_hint_y = 50
+        self.button_padding_left = 20
         self.name = name
         with self.canvas.before:
             Color(*color)
@@ -112,14 +115,15 @@ class Legend(FloatLayout):
                                   size=(size[0] * 0.1, size[1] * 0.1))
             self.label = Label(text=str("%.2f" % value + "% - " + name),
                                pos=(pos[0] + size[0] * 1.3 + size[0]*0.5, pos[1] + size[1] * 0.9 - 30),
-                               halign='left',
+                               halign='left', valign='center',
                                text_size=(size[1], size[1] * 0.1))
 
         self.bind(size=self._update_rect, pos=self._update_rect)
 
     def _update_rect(self, instance, value):
-        self.rect.pos = (instance.pos[0] + 100, instance.pos[1] + 100)
-        self.label.pos = (instance.pos[0] + 220, instance.pos[1] + 65)
+        self.rect.pos = (instance.pos[0], instance.pos[1])
+        self.label.pos = (self.rect.pos[0] + self.rect.size[0] + self.label.size[0] + self.button_padding_left,
+                          self.rect.pos[1] + (self.rect.size[1] - self.label.size[1]) / 2)
 
 
 class Pie(FloatLayout):
@@ -130,6 +134,13 @@ class Pie(FloatLayout):
         angle_start = 0
         count = 0
         self.temp = []
+
+        # with self.canvas:
+            # Color(1, 1, 1, 0)
+            # self.rect = Rectangle(pos=self.pos, size=self.size)
+            # self.bind(size=self._update_rect, pos=self._update_rect)
+
+
         for key, value in data.items():
             percentage = value[1]
             angle_end = angle_start + 3.6 * percentage
@@ -141,11 +152,16 @@ class Pie(FloatLayout):
             self.add_widget(self.temp[count])
             angle_start = angle_end
             count += 1
+
         self.bind(size=self._update_temp, pos=self._update_temp)
 
+    # def _update_rect(self, instance, value):
+        # self.rect.pos = instance.pos
+        # self.rect.size = instance.size
+
     def _update_temp(self, instance, value):
-        for i in self.temp:
-            i.pos = (instance.parent.pos[0] + 55, instance.parent.pos[1] + 60)
+        for slice in self.temp:
+            slice.pos = instance.pos
 
 
 # Class for making one part of Pie
@@ -156,6 +172,7 @@ class PieSlice(FloatLayout):
         self.moved = False
         self.angle = 0
         self.name = name
+
         with self.canvas.before:
             Color(*color)
             self.slice = Ellipse(pos=pos, size=size,
@@ -163,8 +180,10 @@ class PieSlice(FloatLayout):
                                  angle_end=angle_end)
         self.bind(size=self._update_slice, pos=self._update_slice)
 
+
     def _update_slice(self, instance, value):
         self.slice.pos = (instance.pos[0], instance.pos[1])
+        self.slice.size = (min(instance.size) for i in range(2))
 
     # Function for moving part of pie outside of circle
     def move_pie_out(self):
@@ -217,21 +236,37 @@ if __name__ == '__main__':
             self.cols = 1
             self.rows = 2
 
+            # with self.canvas:
+                # Color(1, 0, 0, 1)
+                # self.rect = Rectangle(pos=self.pos, size=self.size)
+                # self.bind(size=self._update_rect, pos=self._update_rect)
+
             in_data = {"Opera": (350, [.1, .1, .4, 1]),
                        "Steam": (234, [.1, .7, .3, 1]),
                        "Overwatch": (532, [.9, .1, .1, 1]),
                        "PyCharm": (485, [.8, .7, .1, 1]),
                        "YouTube": (221, [.3, .4, .9, 1])}
             
-            position = (100, 100)
-            size = (250, 250)
-            button = Button(text="text", width=300)
-            self.add_widget(button)
-            chart = PieChart(data=in_data, position=position, size=size, legend_enable=True)
-            self.add_widget(chart)
+            # Temporary variables
+
+            self.chart = PieGraph(data=in_data, position=self.pos, size=self.size, legend_enable=True) 
+            self.add_widget(self.chart)
+            self.bind(size=self._update_graph, pos=self._update_graph)
+
+        # def _update_rect(self, instance, value):
+            # self.rect.pos = instance.pos
+            # self.rect.size = instance.size
+
+        def _update_graph(self, instance, value):
+            self.chart.pos = instance.pos
+            self.chart.size = instance.size
+
 
     class PieChartApp(App):
         def build(self):
-            return MainWindow()
+            fl = FloatLayout()
+            mw = MainWindow(size_hint=(None, None), size=(500, 400), pos=(200, 200))
+            fl.add_widget(mw)
+            return fl
 
     PieChartApp().run()
