@@ -148,6 +148,7 @@ class Graph(Widget):
     def __init__(self, **kwargs):
         super(Graph, self).__init__(**kwargs)
 
+        self.size_hint_y = None
         with self.canvas:
             self._fbo = Fbo(
                 size=self.size, with_stencilbuffer=self._with_stencilbuffer)
@@ -181,7 +182,7 @@ class Graph(Widget):
         self.bind(xmin=t, xmax=t, xlog=t, x_ticks_major=t, x_ticks_minor=t,
                   xlabel=t, x_grid_label=t, ymin=t, ymax=t, ylog=t,
                   y_ticks_major=t, y_ticks_minor=t, ylabel=t, y_grid_label=t,
-                  font_size=t, label_options=t, x_ticks_angle=t)
+                  font_size=t, label_options=t, x_ticks_angle=t, size=t, pos=t)
         self.bind(tick_color=tc, background_color=tc, border_color=tc)
         self._trigger()
 
@@ -528,6 +529,7 @@ class Graph(Widget):
         self._mesh_rect_color.rgba = tuple(self.border_color)
 
     def _redraw_all(self, *args):
+        print(self.size[1])
         # add/remove all the required labels
         xpoints_major, xpoints_minor = self._redraw_x(*args)
         ypoints_major, ypoints_minor = self._redraw_y(*args)
@@ -897,7 +899,7 @@ class Graph(Widget):
     to 5dp.
     '''
 
-    font_size = NumericProperty('15sp')
+    font_size = NumericProperty('10sp')
     '''Font size of the labels.
 
     :data:`font_size` is a :class:`~kivy.properties.NumericProperty`, defaults

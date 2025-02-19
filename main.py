@@ -46,7 +46,8 @@ from modules.utils import SheetManager
 from threading import Thread
 
 # For graphing features
-import pygal
+from modules.bar import StackedBarGraph, StackedBarWidget
+from modules.pie import PieGraph
 
 
 print(os.path.join(MDApp().user_data_dir, "assets"))
@@ -68,8 +69,7 @@ class SheetsScreen(MDScreen):
         super().__init__()
         self.sheet_data = None
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
-        self.add_widget(self.scrollview)
-
+        
         self.card_container = MDGridLayout(cols=1, padding=20, spacing=[0, 20])
         self.card_container.size_hint_y = None
         self.scrollview.add_widget(self.card_container)
@@ -114,20 +114,41 @@ class SheetsScreen(MDScreen):
 
 class StatisticsScreen(MDScreen):
     MAX_BARS = 5
+    COLOR_TEMPLATE = [
+            [.1, .1, .4, 1],
+            [.1, .7, .3, 1],
+            [.9, .1, .1, 1],
+            [.8, .7, .1, 1],
+            [.3, .4, .9, 1]
+        ]
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.container = MDGridLayout(cols=1, rows=2)
-        self.add_widget(self.container)
+        self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
 
-        self.pie_img = Image(source=PIE_CHART_PATH)
-        self.bar_img = Image(source=BAR_CHART_PATH)
+        self.screen_container = MDGridLayout(cols=1)
+        self.screen_container.size_hint_y = None
+        self.scrollview.add_widget(self.screen_container)
+        self.screen_container.bind(minimum_height=self.screen_container.setter("height"))  # type: ignore
 
-        self.container.add_widget(self.pie_img)
-        self.container.add_widget(self.bar_img)
+        self.pie_container = MDFloatLayout(size_hint_y=None)
+        self.bar_container = MDFloatLayout(size_hint_y=None)
+        self.screen_container.add_widget(self.pie_container)
+        self.screen_container.add_widget(self.bar_container)
+        self.bind(size=self._update_containers)
 
+        self.add_widget(self.scrollview)
+        
+    def _update_containers(self, instance, value):
+        # Update all containers based on more logical aspects
+        self.pie_container.height = instance.size[1]
+        self.bar_container.height = instance.size[1] 
+
+
+    @mainthread
     def update_pie_chart(self):
         values = {}
+        formatted_values = {}
 
         labels = MDApp.get_running_app().sheet_manager.get_categories()
         target_worksheet = MDApp.get_running_app().sheet_manager.get_active_worksheet()
@@ -136,18 +157,36 @@ class StatisticsScreen(MDScreen):
             values[category] = MDApp.get_running_app().sheet_manager.calculate_sum_filter(
                 filters=[["category", category]])
 
-        pie_chart = pygal.Pie()
-        pie_chart.title = f'Proportional usage of budget in {target_worksheet.title} (in %)'
-        for key, value in values.items():
-            pie_chart.add(key, value)
-        pie_chart.render_to_png(PIE_CHART_PATH)
+        # SAMPLE DATA: values = {'Food': 0, 'Transportation': 0, 'Essentials': 0, 'Entertainment': 0}
 
+        title = f'Proportional usage of budget in {target_worksheet.title} (in %)'
+        for index, (key, value) in enumerate(values.items()):
+            if value > 0: 
+                formatted_values[key] = (value, self.COLOR_TEMPLATE[index]) 
+
+
+        if len(formatted_values) > 0:
+            if len(self.pie_container.children) > 0:
+                self.pie_graph.canvas.clear()
+                # self.pie_container.unbind(size=self.adapt_pie, pos=self.adapt_pie)
+                self.pie_container.children.clear()
+
+            self.pie_graph = PieGraph(data=formatted_values,
+                                      position=self.pie_container.pos,
+                                      legend_enable=True,
+                                      size_hint=(.9, .9),
+                                      pos_hint={"center_y": .5, "center_x": .5}
+                                      )
+            self.pie_container.add_widget(self.pie_graph)
+
+
+    @mainthread
     def update_bar_chart(self, start_index):
         last_worksheet_index = MDApp.get_running_app().sheet_manager.get_active_index()
         worksheets = MDApp.get_running_app().sheet_manager.get_all_worksheets()
         graph_size = min(len(worksheets) - start_index - 1, 5)
-        time_stamps = [worksheets[start_index + inc].title for inc in range(graph_size)]
-        option_data = {"time": time_stamps}
+        time_stamps = [worksheets[start_index + inc].title[0:3] for inc in range(graph_size)]
+        option_data = {} 
         for x in MDApp.get_running_app().PAID_FOR_OPTIONS:
             option_data[x] = []
 
@@ -158,30 +197,28 @@ class StatisticsScreen(MDScreen):
                 option_data[option].append(data)  # type: ignore
 
         MDApp.get_running_app().sheet_manager.set_active_worksheet(last_worksheet_index)
-        print(option_data)
+
+        values = []
+        keys = []
+        for key, value in option_data.items():
+            values.append(value)
+            keys.append(key)
 
         # SAMPLE DATA 1: option_data = {"time": ["Jan", "Feb"]}
         # SAMPLE DATA 2: options_data = {..., "Binh": [1, 1, 1], "Hoang": [1, 2, 0]}
 
-        # StackedBarGraph(data, colors, **kwargs)
+        self.bar_graph = StackedBarGraph(months=time_stamps, data=values, keys=keys)
+        self.bar_widget = StackedBarWidget(self.bar_graph, size_hint=[1,1])
 
-        # bar_chart = pygal.StackedBar()
-        # bar_chart.title = 'Total budget usage in last 5 months (in SGD)'
-        # bar_chart.x_labels = option_data["time"]
-        # for key, value in option_data.items():
-            # if key != "time":
-                # bar_chart.add(key, value)
-        # bar_chart.render_to_png(BAR_CHART_PATH)
+        if len(self.bar_container.children) > 0:
+            for widget in self.bar_container.children:
+                widget.canvas.clear()
+            self.bar_container.children.clear()
+        self.bar_container.add_widget(self.bar_widget)
 
     def statistics_refresh(self, start_index):
         self.update_pie_chart()
         self.update_bar_chart(start_index=start_index)
-        self.image_refresh()
-
-    @mainthread
-    def image_refresh(self):
-        self.pie_img.reload()
-        self.bar_img.reload()
 
 
 class OutlineGrid(MDGridLayout):
@@ -606,7 +643,6 @@ class CardLeftWidget(MDBoxLayout):
         self.category = category.lower()
         self.status = status.lower()
 
-        # Just a temporary fix for now
         self.secondary_widget = MDLabel(text=self.status, halign="center", valign="middle", theme_text_color="Custom")
         self.secondary_widget.md_bg_color = self.STATE_COLOR[self.status]["background"]
         self.secondary_widget.text_color = self.STATE_COLOR[self.status]["text"]
@@ -754,22 +790,22 @@ class App(MDApp):
         error_dialog.show()
 
     def startup_process(self):
-        # try:
-        self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").clear_cards()  # type: ignore
-        self.clear_nav_main()
-        MDApp.get_running_app().sheet_manager = SheetManager(
-            credential_path=CREDENTIAL_PATH,
-            authorized_path=AUTHORIZED_PATH,
-            sheet_id=MDApp.get_running_app().SHEET_ID,
-            users=MDApp.get_running_app().USERS)
-        MDApp.get_running_app().sheet_manager.update_all_worksheets()
-        if self.is_new_month():
-            MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
-        self.screen_update(0)
-        self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
-        # except:
-            # self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
-            # self.open_error_dialog()
+        try:
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").clear_cards()  # type: ignore
+            self.clear_nav_main()
+            MDApp.get_running_app().sheet_manager = SheetManager(
+                credential_path=CREDENTIAL_PATH,
+                authorized_path=AUTHORIZED_PATH,
+                sheet_id=MDApp.get_running_app().SHEET_ID,
+                users=MDApp.get_running_app().USERS)
+            MDApp.get_running_app().sheet_manager.update_all_worksheets()
+            if self.is_new_month():
+                MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
+            self.screen_update(0)
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
+        except:
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
+            self.open_error_dialog()
 
         self.close_loading_screen()
         self.thread = None
