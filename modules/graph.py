@@ -32,23 +32,23 @@ a red line plot containing a sin wave on this range::
     stencil-aware widgets.
 
 '''
-from kivy.uix.widget import Widget
+from decimal import Decimal
+from math import log10, floor, ceil
+
+from kivy import metrics
+from kivy.clock import Clock
+from kivy.event import EventDispatcher
+from kivy.graphics import Fbo
+from kivy.graphics import Mesh, Color, Rectangle
+from kivy.lang import Builder
+from kivy.properties import NumericProperty, BooleanProperty, \
+    BoundedNumericProperty, StringProperty, ListProperty, ObjectProperty, \
+    DictProperty
 from kivy.uix.label import Label
 from kivy.uix.stencilview import StencilView
-from kivy.properties import NumericProperty, BooleanProperty,\
-    BoundedNumericProperty, StringProperty, ListProperty, ObjectProperty,\
-    DictProperty 
-from kivy.clock import Clock
-from kivy.graphics import Mesh, Color, Rectangle
-from kivy.graphics import Fbo
-from kivy.event import EventDispatcher
-from kivy.lang import Builder
-from kivy import metrics
-from math import log10, floor, ceil
-from decimal import Decimal
-
-from kivymd.app import MDApp
+from kivy.uix.widget import Widget
 from kivymd.uix.boxlayout import MDBoxLayout
+
 
 def identity(x):
     return x
@@ -224,7 +224,7 @@ class Graph(Widget):
                 # excess later
                 n_ticks_major = n_decades / float(major)
                 n_ticks = int(floor(n_ticks_major * (minor if minor >=
-                                                     1. else 1.0))) + 2
+                                                              1. else 1.0))) + 2
                 # in decade multiples, e.g. 0.1 of the decade, the distance
                 # between ticks
                 decade_dist = major / float(minor if minor else 1.0)
@@ -342,7 +342,7 @@ class Graph(Widget):
             y1 = ylabels[0].texture_size
             y_start = y_next + (padding + y1[1] if len(xlabels) and xlabel_grid
                                 else 0) + \
-                               (padding + y1[1] if not y_next else 0)
+                      (padding + y1[1] if not y_next else 0)
             yextent = y + height - padding - y1[1] / 2.
 
             ymin = funclog(ymin)
@@ -478,7 +478,7 @@ class Graph(Widget):
             ratio = (size[3] - size[1]) / float(ymax - ymin)
             for k in range(start, len(ypoints2) + start):
                 vert[k * 8 + 1] = size[1] + (
-                    ypoints2[k - start] - ymin) * ratio
+                        ypoints2[k - start] - ymin) * ratio
                 vert[k * 8 + 5] = vert[k * 8 + 1]
                 vert[k * 8] = size[0]
                 vert[k * 8 + 4] = top
@@ -727,12 +727,12 @@ class Graph(Widget):
         norm_y = adj_y / self._plot_area.size[1]
         if self.xlog:
             xmin, xmax = log10(self.xmin), log10(self.xmax)
-            conv_x = 10.**(norm_x * (xmax - xmin) + xmin)
+            conv_x = 10. ** (norm_x * (xmax - xmin) + xmin)
         else:
             conv_x = norm_x * (self.xmax - self.xmin) + self.xmin
         if self.ylog:
             ymin, ymax = log10(self.ymin), log10(self.ymax)
-            conv_y = 10.**(norm_y * (ymax - ymin) + ymin)
+            conv_y = 10. ** (norm_y * (ymax - ymin) + ymin)
         else:
             conv_y = norm_y * (self.ymax - self.ymin) + self.ymin
         return [conv_x, conv_y]
@@ -963,7 +963,7 @@ class Plot(EventDispatcher):
     ..versionadded:: 0.4
     '''
 
-    __events__ = ('on_clear_plot', )
+    __events__ = ('on_clear_plot',)
 
     # most recent values of the params used to draw the plot
     params = DictProperty({'xlog': False, 'xmin': 0, 'xmax': 100,
@@ -1138,13 +1138,13 @@ class Plot(EventDispatcher):
     _get_drawings = get_drawings
     _params = params
 
+
 if __name__ == '__main__':
     import itertools
-    from math import sin, cos, pi
-    from random import randrange
     from kivy.utils import get_color_from_hex as rgb
     from kivy.uix.boxlayout import BoxLayout
-    from kivy.app import App
+    from kivymd.app import MDApp
+
 
     class TestApp(MDApp):
 
@@ -1162,11 +1162,8 @@ if __name__ == '__main__':
                 'border_color': rgb('808080')}  # border drawn around each graph
 
             graph = Graph(
-                # xlabel='Cheese',
-                # ylabel='Apples',
                 y_ticks_minor=5,
                 y_ticks_major=25,
-                # y_ticks_major=1,
                 y_grid_label=True,
                 x_grid_label=True,
                 padding=5,
@@ -1174,16 +1171,14 @@ if __name__ == '__main__':
                 ylog=False,
                 x_grid=True,
                 y_grid=True,
-                # xmin=-50,
-                # xmax=50,
                 ymin=0,
                 ymax=100,
                 **graph_theme)
 
             b = BoxLayout()
             b.add_widget(graph)
-            graph.add_widget(MDBoxLayout(size_hint=[1,1], md_bg_color="red"))
-            return b 
+            graph.add_widget(MDBoxLayout(size_hint=[1, 1], md_bg_color="red"))
+            return b
 
 
     TestApp().run()

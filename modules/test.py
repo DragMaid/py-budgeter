@@ -1,17 +1,9 @@
-from kivy.lang import Builder
-from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle, Color
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
 
-KV = """
-BoxLayout:
-    orientation: 'vertical'
-    GraphWidget:
-        id: graph_widget
-"""
 
 class GraphWidget(BoxLayout):
     def __init__(self, **kwargs):
@@ -31,10 +23,10 @@ class GraphWidget(BoxLayout):
     def plot_bar_graph(self):
         self.months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         values = [10, 20, 30, 50, 40, 70, 90, 60, 30, 20, 80, 100]  # Sample data
-        
+
         bar_width = self.width / 13  # Leave space for labels
         max_value = max(values)
-        
+
         for i, value in enumerate(values):
             bar_height = (value / max_value) * (self.height - 50)
             with self.canvas:
@@ -44,16 +36,17 @@ class GraphWidget(BoxLayout):
     def add_month_labels(self):
         label_layout = GridLayout(cols=12, size_hint_y=None, height=30)
         for month in self.months:
-            label_layout.add_widget(Label(text=f'[color=ff3333]{month}[/color]', size_hint_x=None, width=50, markup=True))
+            label_layout.add_widget(
+                Label(text=f'[color=ff3333]{month}[/color]', size_hint_x=None, width=50, markup=True))
         self.add_widget(label_layout)
 
-class GraphApp(App):
-    def build(self):
-        # return Builder.load_string(KV)
-        bl = BoxLayout(size_hint=[1,1])
-        bl.add_widget(GraphWidget(size=[500, 500]))
-        return bl
 
 if __name__ == '__main__':
-    GraphApp().run()
+    class GraphApp(App):
+        def build(self):
+            bl = BoxLayout(size_hint=[1, 1])
+            bl.add_widget(GraphWidget(size=[500, 500]))
+            return bl
 
+
+    GraphApp().run()

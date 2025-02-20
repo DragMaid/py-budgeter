@@ -1,36 +1,38 @@
+from kivy.graphics import Rectangle, Color
+from kivy.uix.label import Label
+from kivy.utils import get_color_from_hex as rgb
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.uix.label import Label
-from kivy.graphics import Rectangle, Color
-from kivy.utils import get_color_from_hex as rgb
+
 from modules.graph import Graph
 from modules.legend import LegendTree
 
 LABEL_HEIGHT = 20
 BAR_INIT_HEIGHT = 0
 DEFAULT_COLOR_TEMPLATE = [
-        [0, 0.247, 0.36, 1], 
-        [0.345, 0.313, 0.553, 1],
-        [0.737, 0.313, 0.564, 1],
-        [1, 0.388, 0.38, 1], 
-        [1, 0.65, 0, 1]]
+    [0, 0.247, 0.36, 1],
+    [0.345, 0.313, 0.553, 1],
+    [0.737, 0.313, 0.564, 1],
+    [1, 0.388, 0.38, 1],
+    [1, 0.65, 0, 1]]
 
 DEFAULT_GRAPH_THEME = {
-                'label_options': { 'color': rgb('444444'), 'bold': True },
-                'background_color': rgb('f8f8f2'),  
-                'tick_color': rgb('808080'),  
-                'border_color': rgb('808080')
-            }
+    'label_options': {'color': rgb('444444'), 'bold': True},
+    'background_color': rgb('f8f8f2'),
+    'tick_color': rgb('808080'),
+    'border_color': rgb('808080')
+}
+
 
 class StackedBarGraph(MDBoxLayout):
     def __init__(self, months=[], data=[], keys=[], color_list=DEFAULT_COLOR_TEMPLATE, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (None, None)  # Increase graph size
-        self.months : list = months
-        self.values : list = data
-        self.color_list : list = color_list
-        self.bars : list = []
-        self.keys : list = keys
+        self.months: list = months
+        self.values: list = data
+        self.color_list: list = color_list
+        self.bars: list = []
+        self.keys: list = keys
         if not self.is_valid_data(): raise Exception
         self.plot_bar_graph()
         self.bind(size=self.plot_bar_graph, pos=self.plot_bar_graph)
@@ -70,7 +72,9 @@ class StackedBarGraph(MDBoxLayout):
                 bar_height = (value / max_value) * (self.height - 100)  # Scale bars properly
                 with self.canvas:
                     Color(rgba=bar_color)
-                    self.bars.append(Rectangle(pos=(self.column_width * i + self.bar_padding_left + self.pos[0], last_height[i] + self.pos[1]), size=(self.bar_width, bar_height)))
+                    self.bars.append(Rectangle(
+                        pos=(self.column_width * i + self.bar_padding_left + self.pos[0], last_height[i] + self.pos[1]),
+                        size=(self.bar_width, bar_height)))
                 last_height[i] += bar_height
 
 
@@ -79,7 +83,7 @@ class StackedBarWidget(MDFloatLayout):
         super().__init__(**kwargs)
         self.bar_graph = bar_graph
         self.max_value = self.bar_graph.get_max_value()
-        self.graph_outer= Graph(
+        self.graph_outer = Graph(
             y_ticks_minor=int(self.max_value / 25),
             y_ticks_major=int(self.max_value / 5),
             y_grid_label=True,
@@ -100,7 +104,8 @@ class StackedBarWidget(MDFloatLayout):
 
         self.graph_outer.bind(view_pos=self.reposition_bar)
         self.graph_outer.bind(size=self.resize_bar, view_pos=self.resize_bar, pos=self.reposition_bar)
-        self.graph_outer.bind(size=self.update_label_layout, pos=self.update_label_layout, view_pos=self.update_label_layout)
+        self.graph_outer.bind(size=self.update_label_layout, pos=self.update_label_layout,
+                              view_pos=self.update_label_layout)
 
         self.add_month_labels()
 
@@ -134,7 +139,8 @@ class StackedBarWidget(MDFloatLayout):
     def add_month_labels(self):
         self.label_layout = MDBoxLayout(orientation='horizontal', size_hint_x=1, size_hint_y=None, height=LABEL_HEIGHT)
         for month in self.bar_graph.months:
-            label = Label(text=f'[color=#000000]{month}[/color]', size_hint_x=None, markup=True, halign="center", font_size='10sp')
+            label = Label(text=f'[color=#000000]{month}[/color]', size_hint_x=None, markup=True, halign="center",
+                          font_size='10sp')
             label.bind(size=self.update_label_alignment)
             self.label_layout.add_widget(label)
         self.add_widget(self.label_layout)
@@ -149,13 +155,16 @@ class StackedBarWidget(MDFloatLayout):
     def update_label_alignment(self, instance, value):
         instance.text_size = (value[0], None)  # Ensures proper alignment
 
+
 if __name__ == '__main__':
     from kivymd.app import MDApp
+
+
     class Test(MDApp):
         def build(self):
-            self.bar = StackedBarGraph(months=["Jan", "Feb", "Mar", "May"], data=[[1,2,0,5],[1,5,9,8]])     
+            self.bar = StackedBarGraph(months=["Jan", "Feb", "Mar", "May"], data=[[1, 2, 0, 5], [1, 5, 9, 8]])
             self.bl = StackedBarWidget(self.bar)
             return self.bl
 
-    Test().run()
 
+    Test().run()

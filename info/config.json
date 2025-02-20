@@ -1,1 +1,7 @@
-{"users": ["u1", "u2"], "sheet_id": ""}
+{
+  "users": [
+    "u1",
+    "u2"
+  ],
+  "sheet_id": ""
+}

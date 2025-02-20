@@ -1,6 +1,7 @@
 import datetime
-import gspread
 import os
+
+import gspread
 
 # | date | product | category | cost | status | paid_for | paid_by
 STRUCTURE_DICT = {"date": 0, "product": 1, "category": 2, "cost": 3, "status": 4, "paid for": 5, "paid by": 6}

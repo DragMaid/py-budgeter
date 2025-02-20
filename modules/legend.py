@@ -1,7 +1,8 @@
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.floatlayout import FloatLayout
 from kivy.graphics import Color, Rectangle
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
+
 
 class LegendTree(GridLayout):
     def __init__(self, data, position, size, **kwargs):
@@ -21,22 +22,23 @@ class LegendTree(GridLayout):
             color = value[2]
             # add legend (rectangle and text)
             self.legends.append(Legend(pos=(self.position[0], self.position[1] - count * self.size[1] * 0.15),
-                                 size=self.size,
-                                 color=color,
-                                 name=key))
+                                       size=self.size,
+                                       color=color,
+                                       name=key))
             self.add_widget(self.legends[count])
             self.rows += 1
             count += 1
 
         # Background for debugging
         # with self.canvas.before:
-             # Color(1, 0, 1, 1)
-            # self.rect = Rectangle(pos=self.pos, size=self.size)
-            # self.bind(size=self._update_rect, pos=self._update_rect)
+        # Color(1, 0, 1, 1)
+        # self.rect = Rectangle(pos=self.pos, size=self.size)
+        # self.bind(size=self._update_rect, pos=self._update_rect)
 
     def _update_rect(self, instance, value):
         self.rect.pos = instance.pos
         self.rect.size = instance.size
+
 
 # Class for creating Legend
 class Legend(FloatLayout):
@@ -62,4 +64,3 @@ class Legend(FloatLayout):
                           self.rect.pos[1])
         self.label.size = (self.size[0] - self.rect.size[0] - self.button_padding_left * 3, self.rect.size[1])
         self.label.text_size = self.label.size
-

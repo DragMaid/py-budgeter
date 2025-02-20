@@ -9,8 +9,6 @@ ASSETS_DIR = os.path.join(SRC_DIR, "assets")
 CREDENTIAL_PATH = os.path.join(INFO_DIR, "credential.json")
 AUTHORIZED_PATH = os.path.join(INFO_DIR, "authorized_user.json")
 CONFIG_PATH = os.path.join(INFO_DIR, "config.json")
-PIE_CHART_PATH = os.path.join(ASSETS_DIR, "pie.png")
-BAR_CHART_PATH = os.path.join(ASSETS_DIR, "bar.png")
 LOADING_GIF_PATH = os.path.join(ASSETS_DIR, "loading.gif")
 
 from kivy.config import Config
@@ -24,7 +22,6 @@ from kivy.lang import Builder
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.metrics import dp
 from kivy.uix.behaviors import ButtonBehavior
-from kivy.uix.image import Image
 from kivymd.app import MDApp, StringProperty
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list.list import MDGridLayout
@@ -49,8 +46,8 @@ from threading import Thread
 from modules.bar import StackedBarGraph, StackedBarWidget
 from modules.pie import PieGraph
 
-
 print(os.path.join(MDApp().user_data_dir, "assets"))
+
 
 class TemplateNavigationBar(MDBottomNavigation):
     pass
@@ -69,7 +66,7 @@ class SheetsScreen(MDScreen):
         super().__init__()
         self.sheet_data = None
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
-        
+
         self.card_container = MDGridLayout(cols=1, padding=20, spacing=[0, 20])
         self.card_container.size_hint_y = None
         self.scrollview.add_widget(self.card_container)
@@ -115,12 +112,12 @@ class SheetsScreen(MDScreen):
 class StatisticsScreen(MDScreen):
     MAX_BARS = 5
     COLOR_TEMPLATE = [
-            [.1, .1, .4, 1],
-            [.1, .7, .3, 1],
-            [.9, .1, .1, 1],
-            [.8, .7, .1, 1],
-            [.3, .4, .9, 1]
-        ]
+        [.1, .1, .4, 1],
+        [.1, .7, .3, 1],
+        [.9, .1, .1, 1],
+        [.8, .7, .1, 1],
+        [.3, .4, .9, 1]
+    ]
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -138,12 +135,11 @@ class StatisticsScreen(MDScreen):
         self.bind(size=self._update_containers)
 
         self.add_widget(self.scrollview)
-        
+
     def _update_containers(self, instance, value):
         # Update all containers based on more logical aspects
         self.pie_container.height = instance.size[1]
-        self.bar_container.height = instance.size[1] 
-
+        self.bar_container.height = instance.size[1]
 
     @mainthread
     def update_pie_chart(self):
@@ -161,14 +157,12 @@ class StatisticsScreen(MDScreen):
 
         title = f'Proportional usage of budget in {target_worksheet.title} (in %)'
         for index, (key, value) in enumerate(values.items()):
-            if value > 0: 
-                formatted_values[key] = (value, self.COLOR_TEMPLATE[index]) 
-
+            if value > 0:
+                formatted_values[key] = (value, self.COLOR_TEMPLATE[index])
 
         if len(formatted_values) > 0:
             if len(self.pie_container.children) > 0:
                 self.pie_graph.canvas.clear()
-                # self.pie_container.unbind(size=self.adapt_pie, pos=self.adapt_pie)
                 self.pie_container.children.clear()
 
             self.pie_graph = PieGraph(data=formatted_values,
@@ -179,14 +173,13 @@ class StatisticsScreen(MDScreen):
                                       )
             self.pie_container.add_widget(self.pie_graph)
 
-
     @mainthread
     def update_bar_chart(self, start_index):
         last_worksheet_index = MDApp.get_running_app().sheet_manager.get_active_index()
         worksheets = MDApp.get_running_app().sheet_manager.get_all_worksheets()
         graph_size = min(len(worksheets) - start_index - 1, 5)
         time_stamps = [worksheets[start_index + inc].title[0:3] for inc in range(graph_size)]
-        option_data = {} 
+        option_data = {}
         for x in MDApp.get_running_app().PAID_FOR_OPTIONS:
             option_data[x] = []
 
@@ -208,7 +201,7 @@ class StatisticsScreen(MDScreen):
         # SAMPLE DATA 2: options_data = {..., "Binh": [1, 1, 1], "Hoang": [1, 2, 0]}
 
         self.bar_graph = StackedBarGraph(months=time_stamps, data=values, keys=keys)
-        self.bar_widget = StackedBarWidget(self.bar_graph, size_hint=[1,1])
+        self.bar_widget = StackedBarWidget(self.bar_graph, size_hint=[1, 1])
 
         if len(self.bar_container.children) > 0:
             for widget in self.bar_container.children:
@@ -224,6 +217,7 @@ class StatisticsScreen(MDScreen):
 class OutlineGrid(MDGridLayout):
     pass
 
+
 class SettingsScreen(MDScreen):
     sheet_id = StringProperty()
     credential = StringProperty()
@@ -237,8 +231,9 @@ class SettingsScreen(MDScreen):
         self.credential = MDApp.get_running_app().CREDENTIAL
         self.user_1 = MDApp.get_running_app().USERS[0]
         self.user_2 = MDApp.get_running_app().USERS[1]
-        
-        self.credential_field = MDTextField(text=self.credential, hint_text="Credential", mode="rectangle", required=True)
+
+        self.credential_field = MDTextField(text=self.credential, hint_text="Credential", mode="rectangle",
+                                            required=True)
         self.sheet_id_field = MDTextField(text=self.sheet_id, hint_text="Sheet ID", mode="rectangle", required=True)
         self.children[0].add_widget(self.credential_field)
         self.children[0].add_widget(self.sheet_id_field)
@@ -255,18 +250,22 @@ class SettingsScreen(MDScreen):
         self.children[0].add_widget(self.split_table)
         self.split_table.add_widget(self.user_split)
 
-        self.user1_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
-        self.user2_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
+        self.user1_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom",
+                                   text_color=[0, 0, 1, 1])
+        self.user2_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom",
+                                   text_color=[0, 0, 1, 1])
         self.user_split.add_widget(self.user1_label)
         self.user_split.add_widget(self.user2_label)
 
-        self.diff_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom", text_color=[0, 0, 1, 1])
+        self.diff_label = MDLabel(text="Not loaded", valign="center", halign="center", theme_text_color="Custom",
+                                  text_color=[0, 0, 1, 1])
         self.split_table.add_widget(self.diff_label)
 
         self.control_container = MDFloatLayout(size_hint=[1, None])
         self.children[0].add_widget(self.control_container)
-        
-        self.save_button = MDRaisedButton(text="Save & Reset", font_style="Subtitle1", pos_hint={"center_x": .5, "center_y": .5})
+
+        self.save_button = MDRaisedButton(text="Save & Reset", font_style="Subtitle1",
+                                          pos_hint={"center_x": .5, "center_y": .5})
         self.save_button.bind(on_release=self.edit_config)
         self.control_container.add_widget(self.save_button)
 
@@ -285,7 +284,7 @@ class SettingsScreen(MDScreen):
         diff = data[0][1] - data[1][1]
         self.user1_label.text = f"{data[0][0]}: ${data[0][1]}"
         self.user2_label.text = f"{data[1][0]}: ${data[1][1]}"
-        self.diff_label.text  = f"Difference: ${diff:.2f}"
+        self.diff_label.text = f"Difference: ${diff:.2f}"
 
 
 class FreeCreateButton(AnchorLayout):
@@ -437,6 +436,7 @@ class PaidDropdown(DropDownBase):
             "text": name,
             "height": dp(56),
             "on_release": lambda account_name=name: self.dropdown_callback(account_name), } for name in names]
+
 
 class FormDatePicker:
     def __init__(self, caller):
@@ -802,7 +802,8 @@ class App(MDApp):
             if self.is_new_month():
                 MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
             self.screen_update(0)
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(
+                False)  # type: ignore
         except:
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
             self.open_error_dialog()

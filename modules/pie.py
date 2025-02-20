@@ -1,16 +1,14 @@
-from kivy.graphics import Ellipse, Color, Rectangle
+from math import atan2, sqrt, pow, degrees, sin, cos, radians
+from random import random
+
+from kivy.graphics import Ellipse, Color
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
 from kivy.vector import Vector
 
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.floatlayout import FloatLayout
-
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-
-from random import random
-from math import atan2, sqrt, pow, degrees, sin, cos, radians
-
 from modules.legend import LegendTree
+
 
 class PieGraph(FloatLayout):
     def __init__(self, data, position, legend_enable=True, **kwargs):
@@ -24,9 +22,9 @@ class PieGraph(FloatLayout):
 
         # Background for debugging
         # with self.canvas:
-            # Color(1, 1, 0, 1)
-            # self.rect = Rectangle(pos=self.pos, size=self.size)
-            # self.bind(size=self._update_rect, pos=self._update_rect)
+        # Color(1, 1, 0, 1)
+        # self.rect = Rectangle(pos=self.pos, size=self.size)
+        # self.bind(size=self._update_rect, pos=self._update_rect)
 
         for key, value in data.items():
             # Used when no default color is set
@@ -47,7 +45,6 @@ class PieGraph(FloatLayout):
         self.pie = Pie(self.data, self.position, self.size_mine)
         self.add_widget(self.pie)
 
-
         # Legend will be added on the right side of the graph -> not very mobile friendly
         # TODO: Add legend to the bottom alongside a scroll view instead of splitting the screen for each feature
 
@@ -67,8 +64,6 @@ class PieGraph(FloatLayout):
         self.pie.pos = (instance.pos[0], instance.pos[1] + instance.size[1] - self.pie.size[1])
 
     def _update_legend(self, instance, value):
-        # self.legend.pos = (instance.pos[0] + min(instance.size), instance.pos[1])
-        # self.legend.pos = (instance.pos[0], instance.pos[1] - min(instance.size))
         self.legend.size = (instance.size[0], instance.size[1] - self.pie.size[1])
         self.legend.pos = instance.pos
 
@@ -83,9 +78,9 @@ class Pie(FloatLayout):
         self.temp = []
 
         # with self.canvas:
-            # Color(1, 1, 1, 0)
-            # self.rect = Rectangle(pos=self.pos, size=self.size)
-            # self.bind(size=self._update_rect, pos=self._update_rect)
+        # Color(1, 1, 1, 0)
+        # self.rect = Rectangle(pos=self.pos, size=self.size)
+        # self.bind(size=self._update_rect, pos=self._update_rect)
 
         for key, value in data.items():
             percentage = value[1]
@@ -128,11 +123,8 @@ class PieSlice(FloatLayout):
                                  angle_start=angle_start,
                                  angle_end=angle_end)
 
-
-
-        # self.name_label = Label(text=self.name, size=(20, 20), size_hint=(None, None), valign="center", halign="center")
-        self.value_label = Label(text=f"{self.value:.1f}%", size=(20,20), size_hint=(None, None), valign="center", halign="center")
-        # self.add_widget(self.name_label)
+        self.value_label = Label(text=f"{self.value:.1f}%", size=(20, 20), size_hint=(None, None), valign="center",
+                                 halign="center")
         self.add_widget(self.value_label)
 
         self.bind(size=self._update_slice, pos=self._update_slice)
@@ -142,19 +134,19 @@ class PieSlice(FloatLayout):
         self.slice.pos = (instance.pos[0], instance.pos[1])
         self.slice.size = (min(instance.size) for i in range(2))
 
-    def get_label_pos(self, modifier : float = 1.0):
+    def get_label_pos(self, modifier: float = 1.0):
         reversed_angle = int(360 - self.slice.angle_end + ((self.slice.angle_end - self.slice.angle_start) / 2))
-        transform_matrix = [ 
-                             [cos(radians(reversed_angle)), -sin(radians(reversed_angle))], 
-                             [sin(radians(reversed_angle)), cos(radians(reversed_angle))] 
-                           ]
+        transform_matrix = [
+            [cos(radians(reversed_angle)), -sin(radians(reversed_angle))],
+            [sin(radians(reversed_angle)), cos(radians(reversed_angle))]
+        ]
         center_coordinate = [self.slice.pos[0] + self.slice.size[0] / 2, self.slice.pos[1] + self.slice.size[1] / 2]
         base_coordinate = [0, self.slice.size[0] / 2]
 
         target_coordinate = [0, 0]
         for index, vector in enumerate(transform_matrix):
             for i in range(len(vector)):
-                target_coordinate[index] += vector[i] * base_coordinate[i] 
+                target_coordinate[index] += vector[i] * base_coordinate[i]
 
         for i in range(len(target_coordinate)):
             target_coordinate[i] = int(target_coordinate[i] * modifier)
@@ -163,15 +155,8 @@ class PieSlice(FloatLayout):
         return target_coordinate
 
     def _update_label(self, *args):
-        # name_label_pos = self.get_label_pos(modifier=1.2)
         value_label_pos = self.get_label_pos(modifier=0.6)
-
-        # self.name_label.pos = name_label_pos
         self.value_label.pos = value_label_pos
-
-    def dprint(self, instance, value):
-        # print(instance.pos)
-        pass
 
     # Function for moving part of pie outside of circle
     def move_pie_out(self):
@@ -213,10 +198,9 @@ class PieSlice(FloatLayout):
             return radius < self.slice.size[0] / 2
 
 
-
-
 if __name__ == '__main__':
     from kivy.app import App
+
 
     class MainWindow(GridLayout):
         def __init__(self, **kwargs):
@@ -225,25 +209,25 @@ if __name__ == '__main__':
             self.rows = 2
 
             # with self.canvas:
-                # Color(1, 0, 0, 1)
-                # self.rect = Rectangle(pos=self.pos, size=self.size)
-                # self.bind(size=self._update_rect, pos=self._update_rect)
+            # Color(1, 0, 0, 1)
+            # self.rect = Rectangle(pos=self.pos, size=self.size)
+            # self.bind(size=self._update_rect, pos=self._update_rect)
 
             in_data = {"Opera": (350, [.1, .1, .4, 1]),
                        "Steam": (234, [.1, .7, .3, 1]),
                        "Overwatch": (532, [.9, .1, .1, 1]),
                        "PyCharm": (485, [.8, .7, .1, 1]),
                        "YouTube": (221, [.3, .4, .9, 1])}
-            
+
             # Temporary variables
 
-            self.chart = PieGraph(data=in_data, position=self.pos, size=self.size, legend_enable=True) 
+            self.chart = PieGraph(data=in_data, position=self.pos, size=self.size, legend_enable=True)
             self.add_widget(self.chart)
             self.bind(size=self._update_graph, pos=self._update_graph)
 
         # def _update_rect(self, instance, value):
-            # self.rect.pos = instance.pos
-            # self.rect.size = instance.size
+        # self.rect.pos = instance.pos
+        # self.rect.size = instance.size
 
         def _update_graph(self, instance, value):
             self.chart.pos = instance.pos
@@ -256,5 +240,6 @@ if __name__ == '__main__':
             mw = MainWindow(size_hint=(None, None), size=(360, 300), pos=(200, 500))
             fl.add_widget(mw)
             return fl
+
 
     PieChartApp().run()
