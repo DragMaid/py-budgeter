@@ -17,7 +17,6 @@ class LegendTree(GridLayout):
         self.size_hint = (None, None)
 
         count = 0
-        print(data)
         for key, value in data.items():
             color = value[2]
             # add legend (rectangle and text)

@@ -46,7 +46,6 @@ from threading import Thread
 from modules.bar import StackedBarGraph, StackedBarWidget
 from modules.pie import PieGraph
 
-print(os.path.join(MDApp().user_data_dir, "assets"))
 
 
 class TemplateNavigationBar(MDBottomNavigation):
@@ -66,6 +65,7 @@ class SheetsScreen(MDScreen):
         super().__init__()
         self.sheet_data = None
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
+        self.add_widget(self.scrollview)
 
         self.card_container = MDGridLayout(cols=1, padding=20, spacing=[0, 20])
         self.card_container.size_hint_y = None
@@ -141,31 +141,30 @@ class StatisticsScreen(MDScreen):
         self.pie_container.height = instance.size[1]
         self.bar_container.height = instance.size[1]
 
-    @mainthread
-    def update_pie_chart(self):
-        values = {}
-        formatted_values = {}
+    def get_pie_data(self):
+        # SAMPLE DATA: values = {'Food': 0, 'Transportation': 0, 'Essentials': 0, 'Entertainment': 0}
 
+        values = {}; formatted_values = {}
         labels = MDApp.get_running_app().sheet_manager.get_categories()
-        target_worksheet = MDApp.get_running_app().sheet_manager.get_active_worksheet()
 
         for category in labels:
             values[category] = MDApp.get_running_app().sheet_manager.calculate_sum_filter(
                 filters=[["category", category]])
 
-        # SAMPLE DATA: values = {'Food': 0, 'Transportation': 0, 'Essentials': 0, 'Entertainment': 0}
-
-        title = f'Proportional usage of budget in {target_worksheet.title} (in %)'
         for index, (key, value) in enumerate(values.items()):
             if value > 0:
                 formatted_values[key] = (value, self.COLOR_TEMPLATE[index])
 
-        if len(formatted_values) > 0:
+        return formatted_values
+
+    @mainthread
+    def update_pie_chart(self, values):
+        if len(values) > 0:
             if len(self.pie_container.children) > 0:
                 self.pie_graph.canvas.clear()
                 self.pie_container.children.clear()
 
-            self.pie_graph = PieGraph(data=formatted_values,
+            self.pie_graph = PieGraph(data=values,
                                       position=self.pie_container.pos,
                                       legend_enable=True,
                                       size_hint=(.9, .9),
@@ -173,45 +172,43 @@ class StatisticsScreen(MDScreen):
                                       )
             self.pie_container.add_widget(self.pie_graph)
 
-    @mainthread
-    def update_bar_chart(self, start_index):
+    def get_bar_data(self, start_index):
+        # SAMPLE DATA 1: option_data = {"time": ["Jan", "Feb"]}
+        # SAMPLE DATA 2: options_data = {..., "Binh": [1, 1, 1], "Hoang": [1, 2, 0]}
+
         last_worksheet_index = MDApp.get_running_app().sheet_manager.get_active_index()
         worksheets = MDApp.get_running_app().sheet_manager.get_all_worksheets()
         graph_size = min(len(worksheets) - start_index - 1, 5)
         time_stamps = [worksheets[start_index + inc].title[0:3] for inc in range(graph_size)]
-        option_data = {}
-        for x in MDApp.get_running_app().PAID_FOR_OPTIONS:
-            option_data[x] = []
+        option_data = {f"{name}": [] for name in MDApp.get_running_app().PAID_FOR_OPTIONS}
 
         for inc in range(graph_size):
             MDApp.get_running_app().sheet_manager.set_active_worksheet(start_index + inc)
             for option in MDApp.get_running_app().PAID_FOR_OPTIONS:
                 data = MDApp.get_running_app().sheet_manager.calculate_sum_filter(filters=[["paid for", option]])
                 option_data[option].append(data)  # type: ignore
-
         MDApp.get_running_app().sheet_manager.set_active_worksheet(last_worksheet_index)
 
-        values = []
-        keys = []
+        values = []; keys = []
         for key, value in option_data.items():
             values.append(value)
             keys.append(key)
 
-        # SAMPLE DATA 1: option_data = {"time": ["Jan", "Feb"]}
-        # SAMPLE DATA 2: options_data = {..., "Binh": [1, 1, 1], "Hoang": [1, 2, 0]}
+        return time_stamps, values, keys
 
+    @mainthread
+    def update_bar_chart(self, time_stamps, values, keys):
         self.bar_graph = StackedBarGraph(months=time_stamps, data=values, keys=keys)
         self.bar_widget = StackedBarWidget(self.bar_graph, size_hint=[1, 1])
-
         if len(self.bar_container.children) > 0:
-            for widget in self.bar_container.children:
-                widget.canvas.clear()
             self.bar_container.children.clear()
         self.bar_container.add_widget(self.bar_widget)
 
     def statistics_refresh(self, start_index):
-        self.update_pie_chart()
-        self.update_bar_chart(start_index=start_index)
+        pie_values = self.get_pie_data()
+        time_stamps, values, keys = self.get_bar_data(start_index)
+        self.update_pie_chart(pie_values)
+        self.update_bar_chart(time_stamps, values, keys)
 
 
 class OutlineGrid(MDGridLayout):
@@ -238,7 +235,7 @@ class SettingsScreen(MDScreen):
         self.children[0].add_widget(self.credential_field)
         self.children[0].add_widget(self.sheet_id_field)
 
-        self.users_container = MDGridLayout(cols=2, adaptive_height=True, spacing=[10, 0])
+        self.users_container = MDGridLayout(cols=2, adaptive_height=True, spacing=[dp(10), 0])
         self.user1_field = MDTextField(text=self.user_1, hint_text="User 1", mode="rectangle", required=True)
         self.user2_field = MDTextField(text=self.user_2, hint_text="User 2", mode="rectangle", required=True)
         self.children[0].add_widget(self.users_container)
@@ -802,9 +799,9 @@ class App(MDApp):
             if self.is_new_month():
                 MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
             self.screen_update(0)
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(
-                False)  # type: ignore
-        except:
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
+        except Exception as e:
+            print("[DEBUG]: " + str(e))
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
             self.open_error_dialog()
 

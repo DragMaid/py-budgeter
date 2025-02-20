@@ -529,7 +529,6 @@ class Graph(Widget):
         self._mesh_rect_color.rgba = tuple(self.border_color)
 
     def _redraw_all(self, *args):
-        print(self.size[1])
         # add/remove all the required labels
         xpoints_major, xpoints_minor = self._redraw_x(*args)
         ypoints_major, ypoints_minor = self._redraw_y(*args)

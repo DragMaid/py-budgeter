@@ -86,7 +86,6 @@ class Pie(FloatLayout):
             percentage = value[1]
             color = value[2]
             angle_end = angle_start + 3.6 * percentage
-            print(color)
             # add part of Pie
             self.temp.append(PieSlice(pos=self.position, size=self.size,
                                       angle_start=angle_start,

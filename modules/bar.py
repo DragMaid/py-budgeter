@@ -121,7 +121,6 @@ class StackedBarWidget(MDFloatLayout):
 
     def _update_plot(self, instance, value):
         self.graph_outer.size[1] = instance.size[1] * 2 / 3
-        print(self.graph_outer.size[1])
         self.graph_outer.pos[1] = instance.pos[1] + instance.size[1] - self.graph_outer.size[1]
 
     def _update_legend(self, instance, value):
