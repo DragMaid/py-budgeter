@@ -67,7 +67,7 @@ class SheetsScreen(MDScreen):
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
         self.add_widget(self.scrollview)
 
-        self.card_container = MDGridLayout(cols=1, padding=20, spacing=[0, 20])
+        self.card_container = MDGridLayout(cols=1, padding=dp(20), spacing=[0, dp(20)])
         self.card_container.size_hint_y = None
         self.scrollview.add_widget(self.card_container)
         self.card_container.bind(minimum_height=self.card_container.setter("height"))  # type: ignore
@@ -459,15 +459,15 @@ class CardViewScreen(MDScreen):
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
 
         self.screen_container = MDGridLayout(cols=1, orientation="lr-bt")
-        self.form_container = MDGridLayout(cols=1, padding=10, spacing=10, size_hint_y=None)
+        self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), size_hint_y=None)
         self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None)
 
-        self.edit_control = MDGridLayout(cols=2, rows=1, padding=[10, 10, 10, 10], spacing=[10, 0], size_hint_x=1,
-                                         size_hint_y=None, height="70px")
+        self.edit_control = MDGridLayout(cols=2, rows=1, padding=dp(10), spacing=[dp(10), 0], size_hint_x=1,
+                                         size_hint_y=None, height=dp(70))
 
         self.edit_control_center = MDAnchorLayout(anchor_x="center", anchor_y="center")
-        self.delete_control_center = MDAnchorLayout(anchor_x="center", anchor_y="center", padding=[10, 10],
-                                                    height="50px")
+        self.delete_control_center = MDAnchorLayout(anchor_x="center", anchor_y="center", padding=dp(10),
+                                                    height=dp(50))
 
         self.save_button = MDRaisedButton(text="save", size_hint=[.5, .7], on_release=self.save_button_callback)
         self.cancel_button = MDRectangleFlatButton(text="cancel", size_hint=[.5, .7],

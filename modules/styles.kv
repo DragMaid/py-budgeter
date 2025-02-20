@@ -2,7 +2,7 @@
 <FreeCreateButton>
     anchor_x: "right"
     anchor_y: "bottom"
-    padding: [0, 0, 10, 10]
+    padding: [0, 0, "10dp", "10dp"]
 
     MDIconButton:
         icon: "plus"
@@ -17,7 +17,7 @@
 
 <CardTextArea>
     orientation: "vertical"
-    padding: 10, 10
+    padding: "10dp"
 
 <CardLeftWidget>
     size_hint_x: .3
@@ -28,7 +28,7 @@
             id: primary_container
             anchor_x: "center"
             anchor_y: "center"
-            radius: 20
+            radius: "20dp"
 
     MDAnchorLayout:
         id: secondary_container
@@ -40,8 +40,8 @@
     orientation: "horizontal"
     height: "100dp"
     size_hint_y: None
-    padding: 5
-    radius: 20
+    padding: "5dp"
+    radius: "20dp"
     md_bg_color: get_color_from_hex("#EDF1FC")
 
     canvas.before:
@@ -49,7 +49,7 @@
             rgba: .5, .5, .5, 1
         Line:
             width: 2
-            rounded_rectangle: self.x, self.y, self.width, self.height, 20
+            rounded_rectangle: self.x, self.y, self.width, self.height, dp(20)
 
 <LoadingOverlay>
     canvas.before:
@@ -95,7 +95,7 @@
 <SettingsScreen>
     MDGridLayout:
         cols: 1
-        padding: [20, 10]
+        padding: ["20dp", "10dp"]
         spacing: [0, "20dp"]
 
 <TemplateNavigationBar>
