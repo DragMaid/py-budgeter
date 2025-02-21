@@ -22,6 +22,7 @@ from kivy.lang import Builder
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.metrics import dp
 from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.button import Button
 from kivymd.app import MDApp, StringProperty
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list.list import MDGridLayout
@@ -58,6 +59,21 @@ class TemplateTopBar(MDTopAppBar):
 
 class LoadingOverlay(MDFloatLayout):
     loading_path = StringProperty(LOADING_GIF_PATH)
+    def __init__(self, **kwargs):
+        super().__init__()
+        # This module add a transparent button widget to disallow clicking through the loading overlay
+        self.no_touch_layout = MDFloatLayout(size_hint=[1, 1])
+        self.add_widget(self.no_touch_layout)
+
+    @mainthread
+    def open(self):
+        self.opacity = 1.0
+        self.no_touch_layout.add_widget(Button(size_hint=[1, 1], opacity=0.0))
+
+    @mainthread
+    def close(self):
+        self.opacity = 0.0
+        self.no_touch_layout.clear_widgets()
 
 
 class SheetsScreen(MDScreen):
@@ -162,7 +178,7 @@ class StatisticsScreen(MDScreen):
         if len(values) > 0:
             if len(self.pie_container.children) > 0:
                 self.pie_graph.canvas.clear()
-                self.pie_container.children.clear()
+                self.pie_container.clear_widgets()
 
             self.pie_graph = PieGraph(data=values,
                                       position=self.pie_container.pos,
@@ -201,7 +217,7 @@ class StatisticsScreen(MDScreen):
         self.bar_graph = StackedBarGraph(months=time_stamps, data=values, keys=keys)
         self.bar_widget = StackedBarWidget(self.bar_graph, size_hint=[1, 1])
         if len(self.bar_container.children) > 0:
-            self.bar_container.children.clear()
+            self.bar_container.clear_widgets()
         self.bar_container.add_widget(self.bar_widget)
 
     def statistics_refresh(self, start_index):
@@ -275,7 +291,7 @@ class SettingsScreen(MDScreen):
             configs.append(data)
         MDApp.get_running_app().write_config(configs[0], configs[1], [configs[2], configs[3]])
         MDApp.get_running_app().retrieve_saved_config()
-        MDApp.get_running_app().on_start()
+        MDApp.get_running_app().threaded_startup_process()
 
     def update_budget_split(self, data: list):
         diff = data[0][1] - data[1][1]
@@ -460,7 +476,7 @@ class CardViewScreen(MDScreen):
 
         self.screen_container = MDGridLayout(cols=1, orientation="lr-bt")
         self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), size_hint_y=None)
-        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None)
+        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None, md_bg_color="white")
 
         self.edit_control = MDGridLayout(cols=2, rows=1, padding=dp(10), spacing=[dp(10), 0], size_hint_x=1,
                                          size_hint_y=None, height=dp(70))
@@ -762,20 +778,20 @@ class App(MDApp):
         self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").sheet_refresh()  # type: ignore
         self.root.ids.bottom_nav.ids.stat_scr.statistics_refresh(start_index=start_index)  # type: ignore
         self.update_nav_worksheets()
-        self.close_loading_screen()
+        self.loading_overlay.close()
         self.thread = None
 
-    @mainthread
-    def open_loading_screen(self):
-        self.loading_overlay = LoadingOverlay()
-        self.root.add_widget(self.loading_overlay)
+    # @mainthread
+    # def open_loading_screen(self):
+        # self.loading_overlay.close()
 
-    @mainthread
-    def close_loading_screen(self):
-        self.root.remove_widget(self.loading_overlay)
+    # @mainthread
+    # def close_loading_screen(self):
+        # self.loading_overlay.opacity = 0.0
+        # print("hey are you ready to go ?")
 
     def threaded_screen_update(self, start_index):
-        self.open_loading_screen()
+        self.loading_overlay.open()
         if self.thread is None:
             self.thread = Thread(target=self.screen_update, args=(start_index,))
             self.thread.start()
@@ -805,11 +821,11 @@ class App(MDApp):
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
             self.open_error_dialog()
 
-        self.close_loading_screen()
+        self.loading_overlay.close()
         self.thread = None
 
     def threaded_startup_process(self):
-        self.open_loading_screen()
+        self.loading_overlay.open()
         if self.thread is None:
             self.thread = Thread(target=self.startup_process)
             self.thread.start()
@@ -823,6 +839,7 @@ class App(MDApp):
 
     def on_start(self):
         self.nav_drawer = self.root.ids.navigation_drawer  # type: ignore
+        self.loading_overlay = self.root.ids.loading_overlay # type: ignore
         self.threaded_startup_process()
 
     def build(self):
