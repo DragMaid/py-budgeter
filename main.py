@@ -27,6 +27,7 @@ from kivymd.app import MDApp, StringProperty
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list.list import MDGridLayout
 from kivymd.uix.scrollview import MDScrollView
+from kivymd.uix.dropdownitem.dropdownitem import MDDropDownItem, Widget
 from kivymd.uix.navigationdrawer import MDNavigationDrawerItem
 from kivymd.uix.bottomnavigation import MDBottomNavigation
 from kivymd.uix.button.button import MDLabel, MDRaisedButton, MDRectangleFlatButton
@@ -37,7 +38,7 @@ from kivymd.uix.transition import MDSlideTransition
 from kivymd.uix.anchorlayout import MDAnchorLayout
 from kivymd.uix.label.label import MDFloatLayout, MDIcon
 from kivymd.uix.textfield import MDTextField
-from kivymd.uix.menu.menu import MDDropdownMenu
+from kivymd.uix.menu.menu import MDDropdownMenu, MDDropdownTextItem
 from kivymd.uix.list import OneLineIconListItem
 from kivymd.uix.pickers import MDDatePicker
 from modules.utils import SheetManager
@@ -344,7 +345,7 @@ class DropDownBase:
         self.menu.open()
 
     def dropdown_callback(self, text: str):
-        self.caller.text = text
+        self.caller.ctext = text
         self.menu.dismiss()
 
 
@@ -464,7 +465,14 @@ class FormDatePicker:
         pass
 
     def on_save(self, instance, value, *args):
-        self.caller.text = value.strftime("%d/%m/%Y")
+        self.caller.ctext = value.strftime("%d/%m/%Y")
+
+
+class CDropdownItem(MDFloatLayout):
+    ctext = StringProperty()
+    def __init__(self, text, **kwargs):
+        super().__init__()
+        self.ctext = text
 
 
 class CardViewScreen(MDScreen):
@@ -475,8 +483,8 @@ class CardViewScreen(MDScreen):
         self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
 
         self.screen_container = MDGridLayout(cols=1, orientation="lr-bt")
-        self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), size_hint_y=None)
-        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None, md_bg_color="white")
+        self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), adaptive_height=True)
+        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None, height=dp(120))
 
         self.edit_control = MDGridLayout(cols=2, rows=1, padding=dp(10), spacing=[dp(10), 0], size_hint_x=1,
                                          size_hint_y=None, height=dp(70))
@@ -504,32 +512,39 @@ class CardViewScreen(MDScreen):
         self.screen_container.add_widget(self.form_container)
         self.scrollview.add_widget(self.screen_container)
         self.add_widget(self.scrollview)
+        # self.add_widget(self.screen_container)
 
-        self.form_container.bind(minimum_height=self.form_container.setter("height"))  # type: ignore
+        self.screen_container.size_hint_y = None
+        self.screen_container.bind(minimum_height=self.screen_container.setter("height"))  # type: ignore
 
         self.product_field = MDTextField(mode="rectangle", hint_text="Product", required=True)
         self.price_field = MDTextField(mode="rectangle", hint_text="Price", helper_text="Price must be a number",
                                        helper_text_mode="on_error", required=True)
 
-        self.date_field = MDTextField(mode="rectangle", hint_text="Date", readonly=True, required=True)
+        self.date_field = CDropdownItem(text="Date", size_hint_x=1)
         self.date_picker = FormDatePicker(self.date_field)
-        self.date_field.bind(focus=lambda obj, focus: self.date_picker.open() if focus else False)
+        self.date_field.children[0].bind(on_release=lambda x: self.date_picker.open())
+        self.date_field.size_hint_y = None
 
-        self.category_field = MDTextField(mode="rectangle", hint_text="Category", readonly=True, required=True)
+        self.category_field = CDropdownItem(text="Category", size_hint_x=1)
         self.category_dropdown = CategoryDropdown(self.category_field)
-        self.category_field.bind(focus=lambda obj, focus: self.category_dropdown.open() if focus else False)
+        self.category_field.children[0].bind(on_release=lambda x: self.category_dropdown.open())
+        self.category_field.size_hint_y = None
 
-        self.status_field = MDTextField(mode="rectangle", hint_text="Status", readonly=True, required=True)
+        self.status_field = CDropdownItem(text="Status", size_hint_x=1)
         self.status_dropdown = StatusDropdown(self.status_field)
-        self.status_field.bind(focus=lambda obj, focus: self.status_dropdown.open() if focus else False)
+        self.status_field.children[0].bind(on_release=lambda x: self.status_dropdown.open())
+        self.status_field.size_hint_y = None
 
-        self.paid_for_field = MDTextField(mode="rectangle", hint_text="Paid for", readonly=True, required=True)
+        self.paid_for_field = CDropdownItem(text="Paid for", size_hint_x=1)
         self.paid_for_dropdown = PaidDropdown(self.paid_for_field, paid_for=True)
-        self.paid_for_field.bind(focus=lambda obj, focus: self.paid_for_dropdown.open() if focus else False)
+        self.paid_for_field.children[0].bind(on_release=lambda x: self.paid_for_dropdown.open())
+        self.paid_for_field.size_hint_y = None
 
-        self.paid_by_field = MDTextField(mode="rectangle", hint_text="Paid by", readonly=True, required=True)
+        self.paid_by_field = CDropdownItem(text="Paid by", size_hint_x=1)
         self.paid_by_dropdown = PaidDropdown(self.paid_by_field)
-        self.paid_by_field.bind(focus=lambda obj, focus: self.paid_by_dropdown.open() if focus else False)
+        self.paid_by_field.children[0].bind(on_release=lambda x: self.paid_by_dropdown.open())
+        self.paid_by_field.size_hint_y = None
 
         self.fields = {"product": self.product_field,
                        "cost": self.price_field,
@@ -780,15 +795,6 @@ class App(MDApp):
         self.update_nav_worksheets()
         self.loading_overlay.close()
         self.thread = None
-
-    # @mainthread
-    # def open_loading_screen(self):
-        # self.loading_overlay.close()
-
-    # @mainthread
-    # def close_loading_screen(self):
-        # self.loading_overlay.opacity = 0.0
-        # print("hey are you ready to go ?")
 
     def threaded_screen_update(self, start_index):
         self.loading_overlay.open()
