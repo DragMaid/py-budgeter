@@ -3,12 +3,12 @@ import json
 
 import os
 
-SRC_DIR = os.path.dirname(os.path.realpath(__file__))
-INFO_DIR = os.path.join(SRC_DIR, "info")
-ASSETS_DIR = os.path.join(SRC_DIR, "assets")
-CREDENTIAL_PATH = os.path.join(INFO_DIR, "credential.json")
-AUTHORIZED_PATH = os.path.join(INFO_DIR, "authorized_user.json")
-CONFIG_PATH = os.path.join(INFO_DIR, "config.json")
+SRC_DIR          = os.path.dirname(os.path.realpath(__file__))
+INFO_DIR         = os.path.join(SRC_DIR, "info")
+ASSETS_DIR       = os.path.join(SRC_DIR, "assets")
+CREDENTIAL_PATH  = os.path.join(INFO_DIR, "credential.json")
+AUTHORIZED_PATH  = os.path.join(INFO_DIR, "authorized_user.json")
+CONFIG_PATH      = os.path.join(INFO_DIR, "config.json")
 LOADING_GIF_PATH = os.path.join(ASSETS_DIR, "loading.gif")
 
 from kivy.config import Config
@@ -17,36 +17,35 @@ Config.set('graphics', 'resizable', False)
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
 Config.set('kivy', 'window_icon', os.path.join(ASSETS_DIR, "logo-transparent.png"))
 
-from kivy.clock import mainthread
-from kivy.lang import Builder
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.metrics import dp
-from kivy.uix.behaviors import ButtonBehavior
-from kivy.uix.button import Button
-from kivymd.app import MDApp, StringProperty
-from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list.list import MDGridLayout
-from kivymd.uix.scrollview import MDScrollView
+from kivy.clock                  import mainthread
+from kivy.lang                   import Builder
+from kivy.uix.anchorlayout       import AnchorLayout
+from kivy.metrics                import dp
+from kivy.uix.behaviors          import ButtonBehavior
+from kivy.uix.button             import Button
+from kivymd.app                  import MDApp, StringProperty
+from kivymd.uix.dialog           import MDDialog
+from kivymd.uix.list.list        import MDGridLayout
+from kivymd.uix.scrollview       import MDScrollView
 from kivymd.uix.navigationdrawer import MDNavigationDrawerItem
 from kivymd.uix.bottomnavigation import MDBottomNavigation
-from kivymd.uix.button.button import MDLabel, MDRaisedButton, MDRectangleFlatButton
-from kivymd.uix.screen import MDScreen
-from kivymd.uix.toolbar import MDTopAppBar
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.transition import MDSlideTransition
-from kivymd.uix.anchorlayout import MDAnchorLayout
-from kivymd.uix.label.label import MDFloatLayout, MDIcon
-from kivymd.uix.textfield import MDTextField
-from kivymd.uix.menu.menu import MDDropdownMenu
-from kivymd.uix.list import OneLineIconListItem
-from kivymd.uix.pickers import MDDatePicker
-from modules.utils import SheetManager
-from threading import Thread
+from kivymd.uix.button.button    import MDLabel, MDRaisedButton, MDRectangleFlatButton
+from kivymd.uix.screen           import MDScreen
+from kivymd.uix.toolbar          import MDTopAppBar
+from kivymd.uix.boxlayout        import MDBoxLayout
+from kivymd.uix.transition       import MDSlideTransition
+from kivymd.uix.anchorlayout     import MDAnchorLayout
+from kivymd.uix.label.label      import MDFloatLayout, MDIcon
+from kivymd.uix.textfield        import MDTextField
+from kivymd.uix.menu.menu        import MDDropdownMenu
+from kivymd.uix.list             import OneLineIconListItem
+from kivymd.uix.pickers          import MDDatePicker
+from modules.utils               import SheetManager
+from threading                   import Thread
 
 # For graphing features
 from modules.bar import StackedBarGraph, StackedBarWidget
 from modules.pie import PieGraph
-
 
 
 class TemplateNavigationBar(MDBottomNavigation):
@@ -59,6 +58,7 @@ class TemplateTopBar(MDTopAppBar):
 
 class LoadingOverlay(MDFloatLayout):
     loading_path = StringProperty(LOADING_GIF_PATH)
+
     def __init__(self, **kwargs):
         super().__init__()
         # This module add a transparent button widget to disallow clicking through the loading overlay
@@ -153,14 +153,14 @@ class StatisticsScreen(MDScreen):
         self.add_widget(self.scrollview)
 
     def _update_containers(self, instance, value):
-        # Update all containers based on more logical aspects
         self.pie_container.height = instance.size[1]
         self.bar_container.height = instance.size[1]
 
     def get_pie_data(self):
         # SAMPLE DATA: values = {'Food': 0, 'Transportation': 0, 'Essentials': 0, 'Entertainment': 0}
 
-        values = {}; formatted_values = {}
+        values = {}
+        formatted_values = {}
         labels = MDApp.get_running_app().sheet_manager.get_categories()
 
         for category in labels:
@@ -205,7 +205,8 @@ class StatisticsScreen(MDScreen):
                 option_data[option].append(data)  # type: ignore
         MDApp.get_running_app().sheet_manager.set_active_worksheet(last_worksheet_index)
 
-        values = []; keys = []
+        values = []
+        keys = []
         for key, value in option_data.items():
             values.append(value)
             keys.append(key)
@@ -321,6 +322,42 @@ class IconListItem(OneLineIconListItem):
     icon = StringProperty()
 
 
+class PressableOverlay(ButtonBehavior, MDBoxLayout):
+    def __init__(self, callback=None, **kwargs):
+        super(PressableOverlay, self).__init__()
+        if callback is not None:
+            self.bind(on_release=callback)
+
+
+class DropDownTextField(ButtonBehavior, MDFloatLayout):
+    text = StringProperty()
+
+    def __init__(self, callback=None, **kwargs):
+        super().__init__()
+        self.size_hint_y = None
+
+        self.textfield = MDTextField(**kwargs, text=self.text)
+        self.overlay = PressableOverlay(callback=callback)
+
+        self.add_widget(self.textfield)
+        self.add_widget(self.overlay)
+
+        self.textfield.bind(size=self._update_parent)
+        self.bind(size=self._update_overlay, pos=self._update_overlay)
+        self.bind(text=self._update_label)
+
+    def _update_label(self, instance, value):
+        self.textfield.text = instance.text
+
+    def _update_parent(self, instance, value):
+        self.size = self.textfield.size
+
+    def _update_overlay(self, instance, value):
+        self.overlay.size = instance.size
+        self.overlay.pos = instance.pos
+        self.textfield.pos = instance.pos
+
+
 class DropDownBase:
     def __init__(self, caller, items=[], position="bottom", width_mult=5):
         self.menu = None
@@ -341,6 +378,8 @@ class DropDownBase:
         self.menu.bind()
 
     def open(self):
+        if self.menu.parent is not None:
+            self.menu.parent.remove_widget(self.menu)
         self.menu.open()
 
     def dropdown_callback(self, text: str):
@@ -467,16 +506,23 @@ class FormDatePicker:
         self.caller.text = value.strftime("%d/%m/%Y")
 
 
+class CDropdownItem(MDFloatLayout):
+    ctext = StringProperty()
+
+    def __init__(self, text, **kwargs):
+        super().__init__()
+        self.ctext = text
+
+
 class CardViewScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__()
         self.selected_card = None
         self.index = None
-        self.scrollview = MDScrollView(do_scroll_x=False, do_scroll_y=True)
 
-        self.screen_container = MDGridLayout(cols=1, orientation="lr-bt")
-        self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), size_hint_y=None)
-        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None, md_bg_color="white")
+        self.screen_container = MDGridLayout(cols=1, orientation="lr-tb")
+        self.form_container = MDGridLayout(cols=1, padding=dp(10), spacing=dp(10), adaptive_height=True)
+        self.control_container = MDGridLayout(cols=1, rows=2, size_hint_x=1, size_hint_y=None, height=dp(120))
 
         self.edit_control = MDGridLayout(cols=2, rows=1, padding=dp(10), spacing=[dp(10), 0], size_hint_x=1,
                                          size_hint_y=None, height=dp(70))
@@ -500,36 +546,37 @@ class CardViewScreen(MDScreen):
         self.control_container.add_widget(self.edit_control_center)
         self.control_container.add_widget(self.delete_control_center)
 
-        self.screen_container.add_widget(self.control_container)
         self.screen_container.add_widget(self.form_container)
-        self.scrollview.add_widget(self.screen_container)
-        self.add_widget(self.scrollview)
+        self.screen_container.add_widget(self.control_container)
 
-        self.form_container.bind(minimum_height=self.form_container.setter("height"))  # type: ignore
+        self.add_widget(self.screen_container)
+
+        self.screen_container.size_hint_y = None
+        self.screen_container.bind(minimum_height=self.screen_container.setter("height"))  # type: ignore
 
         self.product_field = MDTextField(mode="rectangle", hint_text="Product", required=True)
         self.price_field = MDTextField(mode="rectangle", hint_text="Price", helper_text="Price must be a number",
                                        helper_text_mode="on_error", required=True)
 
-        self.date_field = MDTextField(mode="rectangle", hint_text="Date", readonly=True, required=True)
+        self.date_field = DropDownTextField(mode="rectangle", hint_text="Date", required=True,
+                                            callback=lambda x: self.date_picker.open())
         self.date_picker = FormDatePicker(self.date_field)
-        self.date_field.bind(focus=lambda obj, focus: self.date_picker.open() if focus else False)
 
-        self.category_field = MDTextField(mode="rectangle", hint_text="Category", readonly=True, required=True)
+        self.category_field = DropDownTextField(mode="rectangle", hint_text="Category", required=True,
+                                                callback=lambda x: self.category_dropdown.open())
         self.category_dropdown = CategoryDropdown(self.category_field)
-        self.category_field.bind(focus=lambda obj, focus: self.category_dropdown.open() if focus else False)
 
-        self.status_field = MDTextField(mode="rectangle", hint_text="Status", readonly=True, required=True)
+        self.status_field = DropDownTextField(mode="rectangle", hint_text="Status", required=True,
+                                              callback=lambda x: self.status_dropdown.open())
         self.status_dropdown = StatusDropdown(self.status_field)
-        self.status_field.bind(focus=lambda obj, focus: self.status_dropdown.open() if focus else False)
 
-        self.paid_for_field = MDTextField(mode="rectangle", hint_text="Paid for", readonly=True, required=True)
+        self.paid_for_field = DropDownTextField(mode="rectangle", hint_text="Paid for", required=True,
+                                                callback=lambda x: self.paid_for_dropdown.open())
         self.paid_for_dropdown = PaidDropdown(self.paid_for_field, paid_for=True)
-        self.paid_for_field.bind(focus=lambda obj, focus: self.paid_for_dropdown.open() if focus else False)
 
-        self.paid_by_field = MDTextField(mode="rectangle", hint_text="Paid by", readonly=True, required=True)
+        self.paid_by_field = DropDownTextField(mode="rectangle", hint_text="Paid by", required=True,
+                                               callback=lambda x: self.paid_by_dropdown.open())
         self.paid_by_dropdown = PaidDropdown(self.paid_by_field)
-        self.paid_by_field.bind(focus=lambda obj, focus: self.paid_by_dropdown.open() if focus else False)
 
         self.fields = {"product": self.product_field,
                        "cost": self.price_field,
@@ -558,7 +605,7 @@ class CardViewScreen(MDScreen):
     def update_form(self, delete_disabled=False):
         self.disable_delete_button(delete_disabled)
         if not self.selected_card is None:
-            data = self.selected_card.get_data()
+            data = self.selected_card.data
             for key, field in self.fields.items():
                 text = MDApp.get_running_app().sheet_manager.get_data_by_name(data, key)
                 field.text = text if text != "unknown" else ""  # type: ignore
@@ -594,7 +641,7 @@ class CardViewScreen(MDScreen):
     def save_button_callback(self, *args):
         if self.selected_card and self.validate_form():
             MDApp.get_running_app().sheet_manager.modify_cell(
-                self.selected_card.get_index(),
+                self.selected_card.index,
                 date=self.date_field.text,
                 expense=self.product_field.text,
                 category=self.category_field.text,
@@ -613,7 +660,7 @@ class CardViewScreen(MDScreen):
 
     def delete_button_confirm(self):
         if self.selected_card:
-            MDApp.get_running_app().sheet_manager.delete_entry(self.selected_card.get_index() + 2)
+            MDApp.get_running_app().sheet_manager.delete_entry(self.selected_card.index + 2)
             MDApp.get_running_app().threaded_screen_update(MDApp.get_running_app().sheet_manager.get_active_index())
             self.change_sheets_screen()
 
@@ -690,14 +737,6 @@ class SheetCard(ButtonBehavior, MDBoxLayout):  # type: ignore
         if not callback is None:
             self.bind(on_release=lambda x=index: callback(self, x))
 
-    def get_data(self): return self.data
-
-    def set_data(self, data): self.data = data
-
-    def get_index(self): return self.index
-
-    def set_index(self, value): self.index = value
-
 
 class WorksheetNavigationItem(MDNavigationDrawerItem):
     def __init__(self, index, text, callback):
@@ -706,21 +745,23 @@ class WorksheetNavigationItem(MDNavigationDrawerItem):
 
 
 class App(MDApp):
-    thread = None
-    worksheet_items = []
     TODAY_MONTH = datetime.date.today().strftime("%B").lower()
     TODAY_YEAR = datetime.date.today().strftime("%Y")
+
+    thread = None
+    worksheet_items = []
     sheet_manager = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.nav_drawer = None
-        self.loading_overlay = None
         self.CREDENTIAL = None
         self.PAID_FOR_OPTIONS = None
         self.USERS = None
         self.SHEET_ID = None
         self.DATA = None
+
+        self.nav_drawer = None
+        self.loading_overlay = None
         self.retrieve_saved_config()
 
     def retrieve_saved_config(self):
@@ -781,15 +822,6 @@ class App(MDApp):
         self.loading_overlay.close()
         self.thread = None
 
-    # @mainthread
-    # def open_loading_screen(self):
-        # self.loading_overlay.close()
-
-    # @mainthread
-    # def close_loading_screen(self):
-        # self.loading_overlay.opacity = 0.0
-        # print("hey are you ready to go ?")
-
     def threaded_screen_update(self, start_index):
         self.loading_overlay.open()
         if self.thread is None:
@@ -815,7 +847,8 @@ class App(MDApp):
             if self.is_new_month():
                 MDApp.get_running_app().sheet_manager.create_new_month_sheet(self.TODAY_MONTH, self.TODAY_YEAR)
             self.screen_update(0)
-            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(False)  # type: ignore
+            self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(
+                False)  # type: ignore
         except Exception as e:
             print("[DEBUG]: " + str(e))
             self.root.ids.bottom_nav.ids.scr_mgr.get_screen("sheets screen").disable_create_button(True)  # type: ignore
@@ -839,7 +872,7 @@ class App(MDApp):
 
     def on_start(self):
         self.nav_drawer = self.root.ids.navigation_drawer  # type: ignore
-        self.loading_overlay = self.root.ids.loading_overlay # type: ignore
+        self.loading_overlay = self.root.ids.loading_overlay  # type: ignore
         self.threaded_startup_process()
 
     def build(self):
